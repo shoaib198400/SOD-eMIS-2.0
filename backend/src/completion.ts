@@ -31,5 +31,15 @@ export function isSectionComplete(
     const v = values[field.key];
     if (v === undefined || v === null || v === "") return false;
   }
+
+  // Original app's one hardcoded cross-field rule: Section 1's "Complied Recommendations"
+  // (f161) cannot exceed "Total Recommendations" (f160) — blocks marking the section
+  // complete, but doesn't block saving the draft itself.
+  if (sectionNo === 1) {
+    const total = parseFloat(values.f160 ?? "");
+    const complied = parseFloat(values.f161 ?? "");
+    if (!Number.isNaN(total) && !Number.isNaN(complied) && complied > total) return false;
+  }
+
   return true;
 }
