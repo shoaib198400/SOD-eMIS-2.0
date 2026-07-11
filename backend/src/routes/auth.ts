@@ -1,0 +1,113 @@
+import { Router } from "express";
+import bcrypt from "bcryptjs";
+import { pool } from "../db/pool";
+import { newSessionToken, SESSION_COOKIE_NAME, cookieOptions } from "../auth";
+import { requireAuth } from "../middleware/requireAuth";
+
+export const authRouter = Router();
+
+authRouter.post("/login", async (req, res) => {
+  const { loginCode, password } = req.body as { loginCode?: string; password?: string };
+  if (!loginCode || !password) {
+    res.status(400).json({ ok: false, error: "loginCode and password are required" });
+    return;
+  }
+
+  const result = await pool.query(
+    "select id, role, location_code, zone_id, password_hash, active, is_first_login from users where login_code = $1",
+    [loginCode.trim().toUpperCase()]
+  );
+  const user = result.rows[0];
+  if (!user || !user.active) {
+    res.status(401).json({ ok: false, error: "Invalid login code or password" });
+    return;
+  }
+
+  const passwordOk = await bcrypt.compare(password, user.password_hash);
+  if (!passwordOk) {
+    res.status(401).json({ ok: false, error: "Invalid login code or password" });
+    return;
+  }
+
+  const { token, jti } = newSessionToken({
+    sub: user.id,
+    role: user.role,
+    locationCode: user.location_code,
+    zoneId: user.zone_id,
+  });
+
+  await pool.query(
+    "update users set current_session_jti = $1, current_session_started_at = now(), last_login_at = now() where id = $2",
+    [jti, user.id]
+  );
+
+  res.cookie(SESSION_COOKIE_NAME, token, cookieOptions);
+  res.json({
+    ok: true,
+    role: user.role,
+    locationCode: user.location_code,
+    zoneId: user.zone_id,
+    isFirstLogin: user.is_first_login,
+  });
+});
+
+authRouter.post("/logout", requireAuth, async (req, res) => {
+  await pool.query("update users set current_session_jti = null where id = $1", [req.user!.sub]);
+  res.clearCookie(SESSION_COOKIE_NAME, cookieOptions);
+  res.json({ ok: true });
+});
+
+authRouter.get("/me", requireAuth, async (req, res) => {
+  const result = await pool.query(
+    "select id, login_code, role, location_code, zone_id, is_first_login from users where id = $1",
+    [req.user!.sub]
+  );
+  const user = result.rows[0];
+  res.json({
+    userId: user.id,
+    loginCode: user.login_code,
+    role: user.role,
+    locationCode: user.location_code,
+    zoneId: user.zone_id,
+    isFirstLogin: user.is_first_login,
+  });
+});
+
+authRouter.post("/change-password", requireAuth, async (req, res) => {
+  const { currentPassword, newPassword, confirmPassword } = req.body as {
+    currentPassword?: string;
+    newPassword?: string;
+    confirmPassword?: string;
+  };
+  if (!currentPassword || !newPassword || !confirmPassword) {
+    res.status(400).json({ ok: false, error: "All fields are required" });
+    return;
+  }
+  if (newPassword.length < 6) {
+    res.status(400).json({ ok: false, error: "New password must be at least 6 characters" });
+    return;
+  }
+  if (newPassword !== confirmPassword) {
+    res.status(400).json({ ok: false, error: "New password and confirmation do not match" });
+    return;
+  }
+  if (newPassword === currentPassword) {
+    res.status(400).json({ ok: false, error: "New password must differ from current password" });
+    return;
+  }
+
+  const result = await pool.query("select password_hash from users where id = $1", [req.user!.sub]);
+  const user = result.rows[0];
+  const currentOk = await bcrypt.compare(currentPassword, user.password_hash);
+  if (!currentOk) {
+    res.status(400).json({ ok: false, error: "Current password is incorrect" });
+    return;
+  }
+
+  const newHash = await bcrypt.hash(newPassword, 10);
+  await pool.query(
+    "update users set password_hash = $1, is_first_login = false, last_password_change_at = now() where id = $2",
+    [newHash, req.user!.sub]
+  );
+  res.json({ ok: true });
+});

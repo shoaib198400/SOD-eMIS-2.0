@@ -3,6 +3,8 @@ import express from "express";
 import cors from "cors";
 import cookieParser from "cookie-parser";
 import { pool } from "./db/pool";
+import { authRouter } from "./routes/auth";
+import { submissionsRouter } from "./routes/submissions";
 
 const app = express();
 const PORT = process.env.PORT || 4000;
@@ -22,6 +24,9 @@ app.get("/health", async (_req, res) => {
   }
   res.json({ ok: true, service: "sod-mis-backend", db: dbOk, time: new Date().toISOString() });
 });
+
+app.use("/api/auth", authRouter);
+app.use("/api/submissions", submissionsRouter);
 
 app.listen(PORT, () => {
   console.log(`Backend listening on port ${PORT}`);
