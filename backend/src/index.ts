@@ -2,6 +2,7 @@ import "dotenv/config";
 import express from "express";
 import cors from "cors";
 import cookieParser from "cookie-parser";
+import { pool } from "./db/pool";
 
 const app = express();
 const PORT = process.env.PORT || 4000;
@@ -11,8 +12,15 @@ app.use(cors({ origin: FRONTEND_ORIGIN, credentials: true }));
 app.use(cookieParser());
 app.use(express.json());
 
-app.get("/health", (_req, res) => {
-  res.json({ ok: true, service: "sod-mis-backend", time: new Date().toISOString() });
+app.get("/health", async (_req, res) => {
+  let dbOk = false;
+  try {
+    await pool.query("select 1");
+    dbOk = true;
+  } catch {
+    dbOk = false;
+  }
+  res.json({ ok: true, service: "sod-mis-backend", db: dbOk, time: new Date().toISOString() });
 });
 
 app.listen(PORT, () => {
