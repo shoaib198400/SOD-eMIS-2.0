@@ -12,6 +12,11 @@ export interface SessionPayload {
   jti: string;
 }
 
+// Sessions travel as a bearer token (Authorization header), not a cookie. The frontend and
+// backend live on different top-level domains (Cloudflare + Render, no shared custom domain),
+// and browsers increasingly block or partition cookies set across different sites even with
+// SameSite=None; a token the frontend explicitly stores and attaches sidesteps that entirely.
+
 export function newSessionToken(payload: Omit<SessionPayload, "jti">): { token: string; jti: string } {
   const jti = randomUUID();
   return { token: signSessionToken({ ...payload, jti }), jti };
@@ -31,16 +36,4 @@ export function verifySessionToken(token: string): SessionPayload | null {
   }
 }
 
-export const SESSION_COOKIE_NAME = "sod_mis_session";
-
-// Cross-origin (Cloudflare frontend -> Render backend) requires SameSite=None + Secure in
-// production, which in turn requires HTTPS. Local dev runs both sides on plain http://localhost,
-// where a Secure cookie would silently never be sent, so relax to Lax/insecure there.
-const isProd = process.env.NODE_ENV === "production";
-
-export const cookieOptions = {
-  httpOnly: true,
-  secure: isProd,
-  sameSite: (isProd ? "none" : "lax") as "none" | "lax",
-  maxAge: SESSION_MINUTES * 60 * 1000,
-};
+export const REFRESHED_TOKEN_HEADER = "x-refreshed-token";

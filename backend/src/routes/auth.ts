@@ -1,7 +1,7 @@
 import { Router } from "express";
 import bcrypt from "bcryptjs";
 import { pool } from "../db/pool";
-import { newSessionToken, SESSION_COOKIE_NAME, cookieOptions } from "../auth";
+import { newSessionToken } from "../auth";
 import { requireAuth } from "../middleware/requireAuth";
 
 export const authRouter = Router();
@@ -41,9 +41,9 @@ authRouter.post("/login", async (req, res) => {
     [jti, user.id]
   );
 
-  res.cookie(SESSION_COOKIE_NAME, token, cookieOptions);
   res.json({
     ok: true,
+    token,
     role: user.role,
     locationCode: user.location_code,
     zoneId: user.zone_id,
@@ -53,7 +53,6 @@ authRouter.post("/login", async (req, res) => {
 
 authRouter.post("/logout", requireAuth, async (req, res) => {
   await pool.query("update users set current_session_jti = null where id = $1", [req.user!.sub]);
-  res.clearCookie(SESSION_COOKIE_NAME, cookieOptions);
   res.json({ ok: true });
 });
 

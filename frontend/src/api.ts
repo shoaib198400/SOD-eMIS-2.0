@@ -1,13 +1,39 @@
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:4000";
+const TOKEN_STORAGE_KEY = "sod_mis_token";
+const REFRESHED_TOKEN_HEADER = "x-refreshed-token";
+
+// Sessions travel as a bearer token rather than a cookie: the frontend and backend live on
+// different top-level domains with no shared custom domain, and browsers increasingly block
+// or partition cookies set across sites like that even with SameSite=None.
+export function getToken(): string | null {
+  return sessionStorage.getItem(TOKEN_STORAGE_KEY);
+}
+
+function setToken(token: string): void {
+  sessionStorage.setItem(TOKEN_STORAGE_KEY, token);
+}
+
+function clearToken(): void {
+  sessionStorage.removeItem(TOKEN_STORAGE_KEY);
+}
 
 async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
+  const token = getToken();
   const res = await fetch(`${API_URL}${path}`, {
     ...options,
-    credentials: "include",
-    headers: { "Content-Type": "application/json", ...options.headers },
+    headers: {
+      "Content-Type": "application/json",
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      ...options.headers,
+    },
   });
+
+  const refreshed = res.headers.get(REFRESHED_TOKEN_HEADER);
+  if (refreshed) setToken(refreshed);
+
   if (!res.ok) {
     const body = await res.json().catch(() => ({}));
+    if (res.status === 401) clearToken();
     throw new Error(body.message || body.error || `Request failed: ${res.status}`);
   }
   return res.json();
@@ -57,12 +83,21 @@ export interface MeResponse {
 }
 
 export const api = {
-  login: (loginCode: string, password: string) =>
-    request<{ ok: boolean }>("/api/auth/login", {
+  login: async (loginCode: string, password: string) => {
+    const result = await request<{ ok: boolean; token: string }>("/api/auth/login", {
       method: "POST",
       body: JSON.stringify({ loginCode, password }),
-    }),
-  logout: () => request<{ ok: boolean }>("/api/auth/logout", { method: "POST" }),
+    });
+    setToken(result.token);
+    return result;
+  },
+  logout: async () => {
+    try {
+      await request<{ ok: boolean }>("/api/auth/logout", { method: "POST" });
+    } finally {
+      clearToken();
+    }
+  },
   me: () => request<MeResponse>("/api/auth/me"),
   fieldDefs: (sectionNo: number) => request<FieldDefsResponse>(`/api/field-defs/${sectionNo}`),
   getSubmission: (locationCode: string, monthYear: string) =>

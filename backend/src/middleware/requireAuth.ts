@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from "express";
 import { pool } from "../db/pool";
-import { SESSION_COOKIE_NAME, cookieOptions, signSessionToken, verifySessionToken, SessionPayload } from "../auth";
+import { REFRESHED_TOKEN_HEADER, signSessionToken, verifySessionToken, SessionPayload } from "../auth";
 
 declare global {
   // eslint-disable-next-line @typescript-eslint/no-namespace
@@ -11,8 +11,14 @@ declare global {
   }
 }
 
+function extractToken(req: Request): string | null {
+  const header = req.headers.authorization;
+  if (!header || !header.startsWith("Bearer ")) return null;
+  return header.slice("Bearer ".length);
+}
+
 export async function requireAuth(req: Request, res: Response, next: NextFunction) {
-  const token = req.cookies?.[SESSION_COOKIE_NAME];
+  const token = extractToken(req);
   const claims = token ? verifySessionToken(token) : null;
   if (!claims) {
     res.status(401).json({ error: "not_authenticated" });
@@ -33,11 +39,10 @@ export async function requireAuth(req: Request, res: Response, next: NextFunctio
     return;
   }
 
-  // Sliding expiry: reissue a cookie for the SAME session (same jti), just a fresh expiry.
-  // claims comes from jwt.verify(), which includes exp/iat — strip those before re-signing,
-  // since jsonwebtoken rejects a payload that already has exp when expiresIn is also passed.
+  // Sliding expiry: hand back a freshly-expiring token for the SAME session (same jti) on
+  // every authenticated request, via a response header the frontend picks up and re-stores.
   const { sub, role, locationCode, zoneId, jti } = claims;
-  res.cookie(SESSION_COOKIE_NAME, signSessionToken({ sub, role, locationCode, zoneId, jti }), cookieOptions);
+  res.setHeader(REFRESHED_TOKEN_HEADER, signSessionToken({ sub, role, locationCode, zoneId, jti }));
 
   req.user = claims;
   next();
