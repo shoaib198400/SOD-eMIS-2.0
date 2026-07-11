@@ -5,6 +5,7 @@ import cookieParser from "cookie-parser";
 import { pool } from "./db/pool";
 import { authRouter } from "./routes/auth";
 import { submissionsRouter } from "./routes/submissions";
+import { fieldDefsRouter } from "./routes/fieldDefs";
 
 const app = express();
 const PORT = process.env.PORT || 4000;
@@ -27,6 +28,7 @@ app.get("/health", async (_req, res) => {
 
 app.use("/api/auth", authRouter);
 app.use("/api/submissions", submissionsRouter);
+app.use("/api/field-defs", fieldDefsRouter);
 
 app.listen(PORT, () => {
   console.log(`Backend listening on port ${PORT}`);
