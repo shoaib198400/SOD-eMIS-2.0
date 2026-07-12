@@ -33,7 +33,12 @@ try {
     [zoneId, checkerHash]
   );
 
-  console.log("Seeded: zone 'Test Zone', location 'TESTLOC1'");
+  await pool.query(
+    `insert into tank_master (location_code, tank_no) values ('TESTLOC1','TK-101'), ('TESTLOC1','TK-102')
+     on conflict (location_code, tank_no) do nothing`
+  );
+
+  console.log("Seeded: zone 'Test Zone', location 'TESTLOC1', tank master (TK-101, TK-102)");
   console.log("  Maker:   TESTLOC1  / Test@1234");
   console.log("  Checker: TESTLOC1C / Test@1234");
 } catch (e) {

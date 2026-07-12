@@ -84,3 +84,42 @@ create table if not exists approved_snapshots (
   approved_by bigint references users(id),
   approved_at timestamptz not null default now()
 );
+
+-- Phase 3 additions: the M&I ("Section 5A") sub-module — 10 tabs, each either multi-row
+-- (repeatable rows) or a singleton (one record per submission) — plus the reference Tank
+-- Master data that feeds the tank-number dropdowns in several tabs.
+
+create table if not exists mi_submodule_status (
+  submission_id bigint not null references monthly_submissions(id) on delete cascade,
+  tab_key text not null,
+  is_not_applicable boolean not null default false,
+  updated_at timestamptz not null default now(),
+  primary key (submission_id, tab_key)
+);
+
+create table if not exists mi_rows (
+  id bigserial primary key,
+  submission_id bigint not null references monthly_submissions(id) on delete cascade,
+  tab_key text not null,
+  row_data jsonb not null,
+  sort_order int not null default 0,
+  created_at timestamptz not null default now()
+);
+
+create index if not exists idx_mi_rows_submission_tab
+  on mi_rows (submission_id, tab_key);
+
+create table if not exists mi_singletons (
+  submission_id bigint not null references monthly_submissions(id) on delete cascade,
+  tab_key text not null,
+  data jsonb not null,
+  updated_at timestamptz not null default now(),
+  primary key (submission_id, tab_key)
+);
+
+create table if not exists tank_master (
+  id bigserial primary key,
+  location_code text not null references locations(code),
+  tank_no text not null,
+  unique (location_code, tank_no)
+);

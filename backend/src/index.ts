@@ -5,6 +5,7 @@ import { pool } from "./db/pool";
 import { authRouter } from "./routes/auth";
 import { submissionsRouter } from "./routes/submissions";
 import { fieldDefsRouter } from "./routes/fieldDefs";
+import { miRouter } from "./routes/mi";
 import { REFRESHED_TOKEN_HEADER } from "./auth";
 
 const app = express();
@@ -30,6 +31,7 @@ app.get("/health", async (_req, res) => {
 app.use("/api/auth", authRouter);
 app.use("/api/submissions", submissionsRouter);
 app.use("/api/field-defs", fieldDefsRouter);
+app.use("/api/mi", miRouter);
 
 app.listen(PORT, () => {
   console.log(`Backend listening on port ${PORT}`);

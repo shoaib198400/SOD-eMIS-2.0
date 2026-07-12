@@ -2,9 +2,10 @@ import { Router, Request } from "express";
 import { PoolClient } from "pg";
 import { pool } from "../db/pool";
 import { requireAuth, requireRole } from "../middleware/requireAuth";
-import { SECTION_FIELDS } from "../formDefs";
+import { SECTION_FIELDS, getSkipSections } from "../formDefs";
 import { evaluateAutoCalc } from "../autoCalc";
 import { computeOverallCompletion } from "../completion";
+import { getMiCompletion } from "./mi";
 
 export const submissionsRouter = Router();
 
@@ -242,6 +243,22 @@ submissionsRouter.post(
         return;
       }
 
+      // Section 5 (M&I) also requires all 10 M&I sub-module tabs complete, unless this
+      // location type skips Section 5 entirely (TOP/HMEL).
+      if (!getSkipSections(locType).has(5)) {
+        const miCompletion = await getMiCompletion(submission.id);
+        const incompleteMiTabs = miCompletion.filter((t) => !t.complete).map((t) => t.tabKey);
+        if (incompleteMiTabs.length > 0) {
+          await client.query("ROLLBACK");
+          res.status(400).json({
+            error: "mi_incomplete",
+            message: "All M&I (Section 5A) tabs must be complete before submitting",
+            incompleteMiTabs,
+          });
+          return;
+        }
+      }
+
       await client.query(
         "update monthly_submissions set status = 'PENDING_REVIEW', submitted_at = now(), last_updated_at = now() where id = $1",
         [submission.id]
@@ -412,10 +429,13 @@ submissionsRouter.post(
         return;
       }
 
-      // Full wipe (fields + detail tables) — the original app only cleared main fields here,
-      // leaving detail-table/M&I data stranded; this rewrite deliberately fixes that gap.
+      // Full wipe (fields + detail tables + M&I) — the original app only cleared main fields
+      // here, leaving detail-table/M&I data stranded; this rewrite deliberately fixes that gap.
       await client.query("delete from field_values where submission_id = $1", [submission.id]);
       await client.query("delete from detail_rows where submission_id = $1", [submission.id]);
+      await client.query("delete from mi_rows where submission_id = $1", [submission.id]);
+      await client.query("delete from mi_singletons where submission_id = $1", [submission.id]);
+      await client.query("delete from mi_submodule_status where submission_id = $1", [submission.id]);
       await client.query(
         `update monthly_submissions
          set status = 'NOT_STARTED', completion_pct = 0, submitted_at = null, locked_by = null, locked_at = null,
