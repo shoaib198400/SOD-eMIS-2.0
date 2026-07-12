@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { api } from "./api";
 import type { MiFieldDef } from "./api";
+import { buildFieldHelp } from "./fieldHelp";
 
 function isFieldVisible(field: MiFieldDef, values: Record<string, string>): boolean {
   if (!field.showWhen) return true;
@@ -19,6 +20,7 @@ function MiFieldInput({
   onChange: (v: string) => void;
 }) {
   const isWide = field.type === "textarea";
+  const tooltip = buildFieldHelp({ req: field.required, type: field.type, opts: field.opts, maxChars: field.maxChars });
   return (
     <label style={{ gridColumn: isWide ? "1 / -1" : undefined, fontSize: "0.9rem" }}>
       <div style={{ color: "var(--navy-deep)", marginBottom: "0.2rem" }}>
@@ -26,7 +28,7 @@ function MiFieldInput({
         {field.required && <span style={{ color: "var(--red)" }}> *</span>}
       </div>
       {field.type === "select" ? (
-        <select value={value} disabled={disabled} onChange={(e) => onChange(e.target.value)} style={{ width: "100%", padding: "0.4rem" }}>
+        <select value={value} disabled={disabled} onChange={(e) => onChange(e.target.value)} style={{ width: "100%", padding: "0.4rem" }} title={tooltip}>
           <option value="">Select...</option>
           {field.opts?.map((opt) => (
             <option key={opt} value={opt}>
@@ -41,9 +43,17 @@ function MiFieldInput({
           maxLength={field.maxChars}
           onChange={(e) => onChange(e.target.value)}
           style={{ width: "100%", padding: "0.4rem", minHeight: 60 }}
+          title={tooltip}
         />
       ) : field.type === "date" ? (
-        <input type="date" value={value} disabled={disabled} onChange={(e) => onChange(e.target.value)} style={{ width: "100%", padding: "0.4rem" }} />
+        <input
+          type="date"
+          value={value}
+          disabled={disabled}
+          onChange={(e) => onChange(e.target.value)}
+          style={{ width: "100%", padding: "0.4rem" }}
+          title={tooltip}
+        />
       ) : field.type === "int" || field.type === "float" ? (
         <input
           type="number"
@@ -52,6 +62,7 @@ function MiFieldInput({
           disabled={disabled}
           onChange={(e) => onChange(e.target.value)}
           style={{ width: "100%", padding: "0.4rem" }}
+          title={tooltip}
         />
       ) : (
         <input
@@ -61,6 +72,7 @@ function MiFieldInput({
           maxLength={field.maxChars}
           onChange={(e) => onChange(e.target.value)}
           style={{ width: "100%", padding: "0.4rem" }}
+          title={tooltip}
         />
       )}
     </label>

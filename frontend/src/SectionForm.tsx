@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { api } from "./api";
 import type { FieldDef } from "./api";
+import { buildFieldHelp } from "./fieldHelp";
 
 function isFieldVisible(field: FieldDef, values: Record<string, string>): boolean {
   if (!field.showWhen) return true;
@@ -128,6 +129,7 @@ function FieldInput({
   onChange: (v: string) => void;
 }) {
   const isTextarea = field.type === "textarea";
+  const tooltip = buildFieldHelp({ req: field.req, type: field.type, min: field.min, max: field.max, dec: field.dec, opts: field.opts, auto: field.auto, hint: field.hint });
   return (
     <label style={{ gridColumn: isTextarea ? "1 / -1" : undefined, fontSize: "0.9rem" }}>
       <div style={{ color: "var(--navy-deep)", marginBottom: "0.2rem" }}>
@@ -135,9 +137,9 @@ function FieldInput({
         {field.req && !field.auto && <span style={{ color: "var(--red)" }}> *</span>}
       </div>
       {field.auto ? (
-        <div className="auto-box">{value || "—"}</div>
+        <div className="auto-box" title={tooltip}>{value || "—"}</div>
       ) : field.type === "select" ? (
-        <select value={value} disabled={disabled} onChange={(e) => onChange(e.target.value)} style={{ width: "100%" }}>
+        <select value={value} disabled={disabled} onChange={(e) => onChange(e.target.value)} style={{ width: "100%" }} title={tooltip}>
           <option value="">Select...</option>
           {field.opts?.map((opt) => (
             <option key={opt} value={opt}>
@@ -152,9 +154,17 @@ function FieldInput({
           maxLength={750}
           onChange={(e) => onChange(e.target.value)}
           style={{ width: "100%", minHeight: 60 }}
+          title={tooltip}
         />
       ) : field.type === "date" ? (
-        <input type="date" value={value} disabled={disabled} onChange={(e) => onChange(e.target.value)} style={{ width: "100%" }} />
+        <input
+          type="date"
+          value={value}
+          disabled={disabled}
+          onChange={(e) => onChange(e.target.value)}
+          style={{ width: "100%" }}
+          title={tooltip}
+        />
       ) : (
         <input
           type="number"
@@ -165,9 +175,9 @@ function FieldInput({
           step={field.dec ? 1 / 10 ** field.dec : field.type === "int" ? 1 : "any"}
           onChange={(e) => onChange(e.target.value)}
           style={{ width: "100%" }}
+          title={tooltip}
         />
       )}
-      {field.hint && <div style={{ fontSize: "0.75rem", color: "var(--text-muted)" }}>{field.hint}</div>}
     </label>
   );
 }
