@@ -7,6 +7,7 @@ import type { NavSelection } from "./SectionNav";
 import { WorkflowBar } from "./WorkflowBar";
 import { DetailTableEditor } from "./DetailTableEditor";
 import { MiPage } from "./MiPage";
+import { ZoneDashboard } from "./ZoneDashboard";
 import { api } from "./api";
 import type { SubmissionResponse } from "./api";
 
@@ -41,6 +42,10 @@ function Dashboard() {
   useEffect(() => {
     refreshAll();
   }, [refreshAll]);
+
+  if (user?.role === "Zone") {
+    return <ZoneDashboard />;
+  }
 
   if (!locationCode) {
     return (

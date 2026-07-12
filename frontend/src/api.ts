@@ -113,6 +113,27 @@ export interface MiTabResponse {
   rows: Record<string, string>[];
 }
 
+export interface ZoneLocation {
+  location_code: string;
+  location_name: string;
+  loc_type: string;
+  status: SubmissionStatus;
+  completion_pct: string;
+}
+
+export interface RevisionRequest {
+  id: number;
+  location_code: string;
+  location_name: string;
+  month_year: string;
+  reason: string;
+  status: "PENDING" | "APPROVED" | "REJECTED";
+  requested_by: number;
+  actioned_by: number | null;
+  actioned_at: string | null;
+  created_at: string;
+}
+
 export interface MeResponse {
   userId: number;
   loginCode: string;
@@ -181,4 +202,16 @@ export const api = {
       method: "PUT",
       body: JSON.stringify({ isNotApplicable, rows }),
     }),
+  getZoneLocations: (monthYear: string) =>
+    request<{ locations: ZoneLocation[] }>(`/api/zone/locations?monthYear=${monthYear}`),
+  createRevisionRequest: (locationCode: string, monthYear: string, reason: string) =>
+    request<{ ok: boolean; id: number }>("/api/zone/revision-requests", {
+      method: "POST",
+      body: JSON.stringify({ locationCode, monthYear, reason }),
+    }),
+  getRevisionRequests: () => request<{ requests: RevisionRequest[] }>("/api/zone/revision-requests"),
+  approveRevisionRequest: (id: number) =>
+    request<{ ok: boolean }>(`/api/zone/revision-requests/${id}/approve`, { method: "PATCH" }),
+  rejectRevisionRequest: (id: number) =>
+    request<{ ok: boolean }>(`/api/zone/revision-requests/${id}/reject`, { method: "PATCH" }),
 };
