@@ -464,18 +464,20 @@ function OverviewTab({ monthYear }: { monthYear: string }) {
       <div style={{ marginBottom: "1.5rem" }}>
         {locations.map((loc) => (
           <div key={loc.location_code} className="sec-card">
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "0.5rem" }}>
+            <div className="location-row">
               <div>
                 <strong style={{ color: "var(--navy)" }}>{loc.location_name}</strong>
                 <div style={{ fontSize: "0.8rem", color: "var(--text-muted)" }}>
                   {loc.location_code} &middot; {loc.zone_name ?? "—"}
                 </div>
               </div>
-              <div>{loc.completion_pct}%</div>
+              <div className="pct">{loc.completion_pct}%</div>
               <span className={`status-pill ${STATUS_PILL_CLASS[loc.status] ?? "not-started"}`}>{loc.status}</span>
-              <button onClick={() => toggleView(loc.location_code)} className="btn btn-secondary" style={{ fontSize: "0.8rem", padding: "0.3rem 0.7rem" }}>
-                👁 View
-              </button>
+              <div className="actions">
+                <button onClick={() => toggleView(loc.location_code)} className="btn btn-secondary" style={{ fontSize: "0.8rem", padding: "0.3rem 0.7rem" }}>
+                  👁 View
+                </button>
+              </div>
             </div>
             {expanded === loc.location_code && viewData && (
               <div className="section-check-grid" style={{ marginTop: "0.75rem" }}>

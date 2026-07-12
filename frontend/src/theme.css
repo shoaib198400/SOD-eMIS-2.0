@@ -169,6 +169,29 @@ body {
   margin-bottom: 0.85rem;
 }
 
+/* Fixed-width columns so repeated rows (location lists) actually line up — flexbox
+   space-between lets each row's columns drift left/right based on that row's own text
+   length (e.g. "0%" vs "100%", "NOT_STARTED" vs "SUBMITTED"). */
+.location-row {
+  display: grid;
+  grid-template-columns: 1fr 70px 150px auto;
+  align-items: center;
+  gap: 0.75rem;
+}
+.location-row .pct {
+  text-align: right;
+  font-weight: 600;
+  color: var(--navy-deep);
+}
+.location-row .status-pill {
+  justify-self: start;
+}
+.location-row .actions {
+  display: flex;
+  gap: 0.4rem;
+  justify-self: end;
+}
+
 /* Buttons */
 .btn {
   border: none;
