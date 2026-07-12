@@ -80,16 +80,18 @@ export function SectionForm({
 
   return (
     <div>
-      <h2 style={{ marginBottom: 0 }}>{sectionName}</h2>
-      <p style={{ color: "#555", marginTop: "0.25rem" }}>
-        {sectionComplete ? "✅ Section complete" : "⬜ Section incomplete"}
+      <h2 style={{ marginBottom: 0, color: "var(--navy-deep)" }}>{sectionName}</h2>
+      <p style={{ marginTop: "0.25rem" }}>
+        <span className={`status-pill ${sectionComplete ? "submitted" : "not-started"}`}>
+          {sectionComplete ? "Section complete" : "Section incomplete"}
+        </span>
       </p>
-      {disabled && <p style={{ color: "#b45309" }}>This section is read-only right now.</p>}
+      {disabled && <p style={{ color: "#92400e" }}>This section is read-only right now.</p>}
 
       {groupBySub(fields).map((group) => (
-        <fieldset key={group.sub} style={{ marginBottom: "1rem", border: "1px solid #ddd", borderRadius: 6 }}>
-          <legend style={{ padding: "0 0.5rem", fontWeight: 600 }}>{group.sub}</legend>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.75rem", padding: "0.5rem" }}>
+        <fieldset key={group.sub} className="sec-card" style={{ border: "none" }}>
+          <legend style={{ padding: "0 0.4rem", fontWeight: 600, color: "var(--navy)" }}>{group.sub}</legend>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.75rem", padding: "0.25rem" }}>
             {group.fields
               .filter((field) => isFieldVisible(field, values))
               .map((field) => (
@@ -106,7 +108,7 @@ export function SectionForm({
       ))}
 
       {!disabled && (
-        <button onClick={handleSave} disabled={saving} style={{ padding: "0.6rem 1.2rem" }}>
+        <button onClick={handleSave} disabled={saving} className="btn btn-save">
           {saving ? "Saving..." : "Save Section"}
         </button>
       )}
@@ -128,14 +130,14 @@ function FieldInput({
   const isTextarea = field.type === "textarea";
   return (
     <label style={{ gridColumn: isTextarea ? "1 / -1" : undefined, fontSize: "0.9rem" }}>
-      <div>
+      <div style={{ color: "var(--navy-deep)", marginBottom: "0.2rem" }}>
         {field.label}
-        {field.req && !field.auto && <span style={{ color: "crimson" }}> *</span>}
+        {field.req && !field.auto && <span style={{ color: "var(--red)" }}> *</span>}
       </div>
       {field.auto ? (
-        <div style={{ padding: "0.4rem", background: "#f3f4f6", borderRadius: 4 }}>{value || "—"}</div>
+        <div className="auto-box">{value || "—"}</div>
       ) : field.type === "select" ? (
-        <select value={value} disabled={disabled} onChange={(e) => onChange(e.target.value)} style={{ width: "100%", padding: "0.4rem" }}>
+        <select value={value} disabled={disabled} onChange={(e) => onChange(e.target.value)} style={{ width: "100%" }}>
           <option value="">Select...</option>
           {field.opts?.map((opt) => (
             <option key={opt} value={opt}>
@@ -149,16 +151,10 @@ function FieldInput({
           disabled={disabled}
           maxLength={750}
           onChange={(e) => onChange(e.target.value)}
-          style={{ width: "100%", padding: "0.4rem", minHeight: 60 }}
+          style={{ width: "100%", minHeight: 60 }}
         />
       ) : field.type === "date" ? (
-        <input
-          type="date"
-          value={value}
-          disabled={disabled}
-          onChange={(e) => onChange(e.target.value)}
-          style={{ width: "100%", padding: "0.4rem" }}
-        />
+        <input type="date" value={value} disabled={disabled} onChange={(e) => onChange(e.target.value)} style={{ width: "100%" }} />
       ) : (
         <input
           type="number"
@@ -168,10 +164,10 @@ function FieldInput({
           max={field.max ?? undefined}
           step={field.dec ? 1 / 10 ** field.dec : field.type === "int" ? 1 : "any"}
           onChange={(e) => onChange(e.target.value)}
-          style={{ width: "100%", padding: "0.4rem" }}
+          style={{ width: "100%" }}
         />
       )}
-      {field.hint && <div style={{ fontSize: "0.75rem", color: "#777" }}>{field.hint}</div>}
+      {field.hint && <div style={{ fontSize: "0.75rem", color: "var(--text-muted)" }}>{field.hint}</div>}
     </label>
   );
 }

@@ -21,9 +21,9 @@ function MiFieldInput({
   const isWide = field.type === "textarea";
   return (
     <label style={{ gridColumn: isWide ? "1 / -1" : undefined, fontSize: "0.9rem" }}>
-      <div>
+      <div style={{ color: "var(--navy-deep)", marginBottom: "0.2rem" }}>
         {field.label}
-        {field.required && <span style={{ color: "crimson" }}> *</span>}
+        {field.required && <span style={{ color: "var(--red)" }}> *</span>}
       </div>
       {field.type === "select" ? (
         <select value={value} disabled={disabled} onChange={(e) => onChange(e.target.value)} style={{ width: "100%", padding: "0.4rem" }}>
@@ -83,10 +83,14 @@ function RowCard({
   title: string;
 }) {
   return (
-    <div style={{ border: "1px solid #ddd", borderRadius: 6, padding: "0.75rem", marginBottom: "0.75rem" }}>
+    <div className="sec-card">
       <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "0.5rem" }}>
-        <strong>{title}</strong>
-        {!disabled && onRemove && <button onClick={onRemove}>Remove</button>}
+        <strong style={{ color: "var(--navy)" }}>{title}</strong>
+        {!disabled && onRemove && (
+          <button onClick={onRemove} className="btn btn-secondary" style={{ padding: "0.25rem 0.6rem", fontSize: "0.8rem" }}>
+            Remove
+          </button>
+        )}
       </div>
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.75rem" }}>
         {fields
@@ -155,10 +159,10 @@ export function MiTabEditor({
 
   return (
     <div>
-      <h3>{tab.label}</h3>
-      {error && <p style={{ color: "crimson" }}>{error}</p>}
+      <h3 style={{ color: "var(--navy-deep)" }}>{tab.label}</h3>
+      {error && <p style={{ color: "var(--red)" }}>{error}</p>}
 
-      <label style={{ display: "block", marginBottom: "0.75rem", padding: "0.5rem", background: "#fef3c7", borderRadius: 4 }}>
+      <label style={{ display: "block", marginBottom: "0.75rem", padding: "0.5rem 0.75rem", background: "#fef3c7", borderRadius: 8 }}>
         <input type="checkbox" checked={isNA} disabled={disabled} onChange={(e) => setIsNA(e.target.checked)} /> {tab.naLabel}
       </label>
 
@@ -175,11 +179,15 @@ export function MiTabEditor({
           />
         ))}
 
-      {!disabled && !isNA && tab.isMultiRow && <button onClick={() => setRows((prev) => [...prev, {}])}>+ Add Row</button>}
+      {!disabled && !isNA && tab.isMultiRow && (
+        <button onClick={() => setRows((prev) => [...prev, {}])} className="btn btn-secondary">
+          + Add Row
+        </button>
+      )}
 
       {!disabled && (
         <div style={{ marginTop: "0.75rem" }}>
-          <button onClick={handleSave} disabled={saving}>
+          <button onClick={handleSave} disabled={saving} className="btn btn-save">
             {saving ? "Saving..." : "Save Tab"}
           </button>
         </div>

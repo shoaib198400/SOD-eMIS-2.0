@@ -12,6 +12,8 @@ import { AdminDashboard } from "./AdminDashboard";
 import { HelpdeskWidget } from "./HelpdeskWidget";
 import { api } from "./api";
 import type { SubmissionResponse } from "./api";
+import sideLogo from "./assets/brand/side_logo.png";
+import titleBanner from "./assets/brand/title_banner.png";
 
 function currentMonthKey(): string {
   const now = new Date();
@@ -54,12 +56,14 @@ function Dashboard() {
 
   if (!locationCode) {
     return (
-      <main style={{ padding: "2rem", fontFamily: "sans-serif" }}>
+      <main style={{ padding: "2rem" }}>
         <p>
           Logged in as <strong>{user?.loginCode}</strong> ({user?.role}) — this role doesn't have a data-entry
           section yet in this build.
         </p>
-        <button onClick={logout}>Log out</button>
+        <button className="btn btn-secondary" onClick={logout}>
+          Log out
+        </button>
       </main>
     );
   }
@@ -81,46 +85,58 @@ function Dashboard() {
   }
 
   return (
-    <main style={{ maxWidth: 1100, margin: "2rem auto", fontFamily: "sans-serif", padding: "0 1rem" }}>
-      <header style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1rem" }}>
-        <div>
-          <h1 style={{ margin: 0, fontSize: "1.3rem" }}>SOD eMIS</h1>
-          <p style={{ margin: 0, color: "#555" }}>
-            {locationCode} · {user!.role}
-          </p>
-        </div>
-        <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
-          <label>
-            Month: <input type="month" value={monthYear} onChange={(e) => setMonthYear(e.target.value)} />
-          </label>
-          <HelpdeskWidget />
-          <button onClick={logout}>Log out</button>
-        </div>
-      </header>
-
-      {summary && (
-        <WorkflowBar
-          status={summary.status}
-          completionPct={summary.completionPct}
-          checkerNotes={summary.checkerNotes}
-          role={user!.role}
-          busy={actionBusy}
-          error={actionError}
-          onSubmit={() => runAction(() => api.submit(locationCode, monthYear))}
-          onApprove={() => runAction(() => api.approve(locationCode, monthYear))}
-          onReject={(note) => runAction(() => api.reject(locationCode, monthYear, note))}
-          onReset={(reason) => runAction(() => api.reset(locationCode, monthYear, reason))}
-        />
-      )}
-
-      <div style={{ display: "flex", gap: "1.5rem", alignItems: "flex-start" }}>
+    <div className="app-shell">
+      <aside className="app-sidebar">
+        <img src={sideLogo} className="side-logo" alt="" />
         <SectionNav
           sectionsComplete={summary?.sectionsComplete ?? {}}
           miComplete={miAllComplete}
           selected={selection}
           onSelect={setSelection}
         />
-        <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ flex: 1 }} />
+        <button className="nav-btn" onClick={logout}>
+          Log out
+        </button>
+      </aside>
+
+      <main className="app-main">
+        <header className="app-header">
+          <div>
+            <div style={{ fontWeight: 600 }}>SOD eMIS</div>
+            <div style={{ fontSize: "0.8rem", opacity: 0.85 }}>{locationCode}</div>
+          </div>
+          <img src={titleBanner} className="title-banner" alt="" />
+          <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
+            <input
+              type="month"
+              value={monthYear}
+              onChange={(e) => setMonthYear(e.target.value)}
+              style={{ background: "white" }}
+            />
+            <HelpdeskWidget />
+            <span className="role-badge">{user!.role}</span>
+          </div>
+        </header>
+
+        {summary && (
+          <div className="dash-card">
+            <WorkflowBar
+              status={summary.status}
+              completionPct={summary.completionPct}
+              checkerNotes={summary.checkerNotes}
+              role={user!.role}
+              busy={actionBusy}
+              error={actionError}
+              onSubmit={() => runAction(() => api.submit(locationCode, monthYear))}
+              onApprove={() => runAction(() => api.approve(locationCode, monthYear))}
+              onReject={(note) => runAction(() => api.reject(locationCode, monthYear, note))}
+              onReset={(reason) => runAction(() => api.reset(locationCode, monthYear, reason))}
+            />
+          </div>
+        )}
+
+        <div className="dash-card">
           {selection === "MI" ? (
             <MiPage locationCode={locationCode} monthYear={monthYear} disabled={disabled} onAnySaved={refreshAll} />
           ) : (
@@ -144,14 +160,14 @@ function Dashboard() {
             </>
           )}
         </div>
-      </div>
-    </main>
+      </main>
+    </div>
   );
 }
 
 function AppContent() {
   const { user, loading } = useAuth();
-  if (loading) return <p style={{ padding: "2rem", fontFamily: "sans-serif" }}>Loading...</p>;
+  if (loading) return <p style={{ padding: "2rem" }}>Loading...</p>;
   return user ? <Dashboard /> : <LoginPage />;
 }
 

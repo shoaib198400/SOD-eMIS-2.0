@@ -121,31 +121,29 @@ export function DetailTableEditor({
 
   return (
     <div style={{ marginTop: "1rem" }}>
-      <h3 style={{ marginBottom: "0.5rem" }}>{config.title}</h3>
-      {error && <p style={{ color: "crimson" }}>{error}</p>}
+      <h3 style={{ marginBottom: "0.5rem", color: "var(--navy-deep)" }}>{config.title}</h3>
+      {error && <p style={{ color: "var(--red)" }}>{error}</p>}
       <div style={{ overflowX: "auto" }}>
-        <table style={{ borderCollapse: "collapse", width: "100%" }}>
+        <table className="themed-table">
           <thead>
             <tr>
               {config.columns.map((col) => (
-                <th key={col.key} style={{ border: "1px solid #ddd", padding: "0.4rem", fontSize: "0.85rem" }}>
-                  {col.label}
-                </th>
+                <th key={col.key}>{col.label}</th>
               ))}
-              {!disabled && <th style={{ border: "1px solid #ddd" }} />}
+              {!disabled && <th />}
             </tr>
           </thead>
           <tbody>
             {rows.map((row, rowIndex) => (
               <tr key={row.id ?? rowIndex}>
                 {config.columns.map((col) => (
-                  <td key={col.key} style={{ border: "1px solid #ddd", padding: "0.2rem" }}>
+                  <td key={col.key}>
                     {col.type === "select" ? (
                       <select
                         value={(row[col.key] as string) ?? ""}
                         disabled={disabled}
                         onChange={(e) => updateCell(rowIndex, col.key, e.target.value)}
-                        style={{ width: "100%", padding: "0.3rem" }}
+                        style={{ width: "100%" }}
                       >
                         <option value="">Select...</option>
                         {col.opts?.map((opt) => (
@@ -160,14 +158,16 @@ export function DetailTableEditor({
                         value={(row[col.key] as string) ?? ""}
                         disabled={disabled}
                         onChange={(e) => updateCell(rowIndex, col.key, e.target.value)}
-                        style={{ width: "100%", padding: "0.3rem", border: "none" }}
+                        style={{ width: "100%" }}
                       />
                     )}
                   </td>
                 ))}
                 {!disabled && (
-                  <td style={{ border: "1px solid #ddd", textAlign: "center" }}>
-                    <button onClick={() => removeRow(rowIndex)}>Remove</button>
+                  <td style={{ textAlign: "center" }}>
+                    <button onClick={() => removeRow(rowIndex)} className="btn btn-secondary" style={{ padding: "0.25rem 0.6rem", fontSize: "0.8rem" }}>
+                      Remove
+                    </button>
                   </td>
                 )}
               </tr>
@@ -177,8 +177,10 @@ export function DetailTableEditor({
       </div>
       {!disabled && (
         <div style={{ marginTop: "0.5rem", display: "flex", gap: "0.5rem" }}>
-          <button onClick={addRow}>+ Add Row</button>
-          <button onClick={handleSave} disabled={saving}>
+          <button onClick={addRow} className="btn btn-secondary">
+            + Add Row
+          </button>
+          <button onClick={handleSave} disabled={saving} className="btn btn-save">
             {saving ? "Saving..." : "Save Table"}
           </button>
         </div>

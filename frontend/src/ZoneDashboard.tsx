@@ -2,11 +2,20 @@ import { useCallback, useEffect, useState } from "react";
 import { useAuth } from "./AuthContext";
 import { api } from "./api";
 import type { ZoneLocation, RevisionRequest } from "./api";
+import titleBanner from "./assets/brand/title_banner.png";
 
 function currentMonthKey(): string {
   const now = new Date();
   return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
 }
+
+const STATUS_PILL_CLASS: Record<string, string> = {
+  NOT_STARTED: "not-started",
+  IN_PROGRESS: "in-progress",
+  PENDING_REVIEW: "pending-review",
+  SUBMITTED: "submitted",
+  REJECTED: "rejected",
+};
 
 export function ZoneDashboard() {
   const { user, logout } = useAuth();
@@ -45,95 +54,101 @@ export function ZoneDashboard() {
   }
 
   return (
-    <main style={{ maxWidth: 900, margin: "2rem auto", fontFamily: "sans-serif", padding: "0 1rem" }}>
-      <header style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1rem" }}>
+    <main style={{ maxWidth: 950, margin: "0 auto", padding: "1.4rem" }}>
+      <header className="app-header">
         <div>
-          <h1 style={{ margin: 0, fontSize: "1.3rem" }}>SOD eMIS — Zone Dashboard</h1>
-          <p style={{ margin: 0, color: "#555" }}>{user?.loginCode}</p>
+          <div style={{ fontWeight: 600 }}>SOD eMIS — Zone Dashboard</div>
+          <div style={{ fontSize: "0.8rem", opacity: 0.85 }}>{user?.loginCode}</div>
         </div>
-        <div>
-          <label style={{ marginRight: "1rem" }}>
-            Month: <input type="month" value={monthYear} onChange={(e) => setMonthYear(e.target.value)} />
-          </label>
-          <button onClick={logout}>Log out</button>
+        <img src={titleBanner} className="title-banner" alt="" />
+        <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
+          <input type="month" value={monthYear} onChange={(e) => setMonthYear(e.target.value)} style={{ background: "white" }} />
+          <button onClick={logout} className="btn btn-secondary">
+            Log out
+          </button>
         </div>
       </header>
 
-      {error && <p style={{ color: "crimson" }}>{error}</p>}
+      {error && <p style={{ color: "var(--red)" }}>{error}</p>}
 
-      <h2 style={{ fontSize: "1.1rem" }}>Locations</h2>
-      <table style={{ borderCollapse: "collapse", width: "100%", marginBottom: "1.5rem" }}>
-        <thead>
-          <tr>
-            <th style={{ border: "1px solid #ddd", padding: "0.4rem", textAlign: "left" }}>Location</th>
-            <th style={{ border: "1px solid #ddd", padding: "0.4rem", textAlign: "left" }}>Status</th>
-            <th style={{ border: "1px solid #ddd", padding: "0.4rem", textAlign: "left" }}>Completion</th>
-            <th style={{ border: "1px solid #ddd", padding: "0.4rem" }} />
-          </tr>
-        </thead>
-        <tbody>
-          {locations.map((loc) => (
-            <tr key={loc.location_code}>
-              <td style={{ border: "1px solid #ddd", padding: "0.4rem" }}>
-                {loc.location_name} ({loc.location_code})
-              </td>
-              <td style={{ border: "1px solid #ddd", padding: "0.4rem" }}>{loc.status}</td>
-              <td style={{ border: "1px solid #ddd", padding: "0.4rem" }}>{loc.completion_pct}%</td>
-              <td style={{ border: "1px solid #ddd", padding: "0.4rem" }}>
-                {loc.status === "SUBMITTED" && (
-                  <button onClick={() => setRevisionTarget(loc.location_code)}>Request Revision</button>
-                )}
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-
-      {revisionTarget && (
-        <div style={{ border: "1px solid #ccc", borderRadius: 6, padding: "0.75rem", marginBottom: "1.5rem" }}>
-          <p>
-            Request revision for <strong>{revisionTarget}</strong> — {monthYear}
-          </p>
-          <textarea
-            placeholder="Reason (required)"
-            value={reason}
-            onChange={(e) => setReason(e.target.value)}
-            style={{ width: "100%", padding: "0.4rem" }}
-          />
-          <div style={{ marginTop: "0.5rem" }}>
-            <button onClick={submitRevisionRequest} disabled={!reason.trim()}>
-              Submit Request
-            </button>{" "}
-            <button onClick={() => setRevisionTarget(null)}>Cancel</button>
-          </div>
-        </div>
-      )}
-
-      <h2 style={{ fontSize: "1.1rem" }}>Revision Requests (this zone)</h2>
-      {requests.length === 0 ? (
-        <p style={{ color: "#555" }}>None yet.</p>
-      ) : (
-        <table style={{ borderCollapse: "collapse", width: "100%" }}>
+      <div className="dash-card">
+        <h2 style={{ fontSize: "1.1rem", color: "var(--navy-deep)", marginTop: 0 }}>Locations</h2>
+        <table className="themed-table">
           <thead>
             <tr>
-              <th style={{ border: "1px solid #ddd", padding: "0.4rem", textAlign: "left" }}>Location</th>
-              <th style={{ border: "1px solid #ddd", padding: "0.4rem", textAlign: "left" }}>Month</th>
-              <th style={{ border: "1px solid #ddd", padding: "0.4rem", textAlign: "left" }}>Reason</th>
-              <th style={{ border: "1px solid #ddd", padding: "0.4rem", textAlign: "left" }}>Status</th>
+              <th>Location</th>
+              <th>Status</th>
+              <th>Completion</th>
+              <th />
             </tr>
           </thead>
           <tbody>
-            {requests.map((r) => (
-              <tr key={r.id}>
-                <td style={{ border: "1px solid #ddd", padding: "0.4rem" }}>{r.location_name}</td>
-                <td style={{ border: "1px solid #ddd", padding: "0.4rem" }}>{r.month_year.slice(0, 7)}</td>
-                <td style={{ border: "1px solid #ddd", padding: "0.4rem" }}>{r.reason}</td>
-                <td style={{ border: "1px solid #ddd", padding: "0.4rem" }}>{r.status}</td>
+            {locations.map((loc) => (
+              <tr key={loc.location_code}>
+                <td>
+                  {loc.location_name} ({loc.location_code})
+                </td>
+                <td>
+                  <span className={`status-pill ${STATUS_PILL_CLASS[loc.status] ?? "not-started"}`}>{loc.status}</span>
+                </td>
+                <td>{loc.completion_pct}%</td>
+                <td>
+                  {loc.status === "SUBMITTED" && (
+                    <button onClick={() => setRevisionTarget(loc.location_code)} className="btn btn-secondary" style={{ fontSize: "0.8rem", padding: "0.3rem 0.6rem" }}>
+                      Request Revision
+                    </button>
+                  )}
+                </td>
               </tr>
             ))}
           </tbody>
         </table>
-      )}
+
+        {revisionTarget && (
+          <div className="sec-card" style={{ marginTop: "1rem" }}>
+            <p style={{ marginTop: 0 }}>
+              Request revision for <strong>{revisionTarget}</strong> — {monthYear}
+            </p>
+            <textarea placeholder="Reason (required)" value={reason} onChange={(e) => setReason(e.target.value)} style={{ width: "100%" }} />
+            <div style={{ marginTop: "0.5rem", display: "flex", gap: "0.5rem" }}>
+              <button onClick={submitRevisionRequest} disabled={!reason.trim()} className="btn btn-primary">
+                Submit Request
+              </button>
+              <button onClick={() => setRevisionTarget(null)} className="btn btn-secondary">
+                Cancel
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+
+      <div className="dash-card">
+        <h2 style={{ fontSize: "1.1rem", color: "var(--navy-deep)", marginTop: 0 }}>Revision Requests (this zone)</h2>
+        {requests.length === 0 ? (
+          <p style={{ color: "var(--text-muted)" }}>None yet.</p>
+        ) : (
+          <table className="themed-table">
+            <thead>
+              <tr>
+                <th>Location</th>
+                <th>Month</th>
+                <th>Reason</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              {requests.map((r) => (
+                <tr key={r.id}>
+                  <td>{r.location_name}</td>
+                  <td>{r.month_year.slice(0, 7)}</td>
+                  <td>{r.reason}</td>
+                  <td>{r.status}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </div>
     </main>
   );
 }

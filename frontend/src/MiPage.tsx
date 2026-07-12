@@ -33,10 +33,12 @@ export function MiPage({
 
   return (
     <div>
-      <h2 style={{ marginBottom: "0.25rem" }}>Section 5A — Maintenance &amp; Inspection</h2>
-      <p style={{ color: "#555" }}>
-        {status.allComplete ? "✅ All 10 M&I tabs complete" : "⬜ Not all M&I tabs are complete yet"} — every tab must
-        be either filled in or marked Not Applicable before this month can be submitted for review.
+      <h2 style={{ marginBottom: "0.25rem", color: "var(--navy-deep)" }}>Section 5A — Maintenance &amp; Inspection</h2>
+      <p style={{ color: "var(--text-muted)" }}>
+        <span className={`status-pill ${status.allComplete ? "submitted" : "not-started"}`}>
+          {status.allComplete ? "All 10 M&I tabs complete" : "Not all M&I tabs complete"}
+        </span>{" "}
+        every tab must be either filled in or marked Not Applicable before this month can be submitted for review.
       </p>
 
       <div style={{ display: "flex", flexWrap: "wrap", gap: "0.4rem", marginBottom: "1rem" }}>
@@ -44,13 +46,12 @@ export function MiPage({
           <button
             key={t.key}
             onClick={() => setSelectedTab(t.key)}
+            className="btn btn-secondary"
             style={{
-              padding: "0.4rem 0.6rem",
-              border: "1px solid #ddd",
-              borderRadius: 4,
-              background: selectedTab === t.key ? "#e0e7ff" : "transparent",
-              cursor: "pointer",
+              padding: "0.4rem 0.7rem",
               fontSize: "0.85rem",
+              opacity: selectedTab === t.key ? 1 : 0.55,
+              boxShadow: "none",
             }}
           >
             {t.complete ? "✅" : "⬜"} {t.label}

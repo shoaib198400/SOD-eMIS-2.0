@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { useAuth } from "./AuthContext";
 import { api } from "./api";
 import type { ZoneLocation, RevisionRequest, AdminLocation, Zone, HelpdeskTicket, AuditLogEntry } from "./api";
+import titleBanner from "./assets/brand/title_banner.png";
 
 function currentMonthKey(): string {
   const now = new Date();
@@ -11,6 +12,14 @@ function todayKey(): string {
   return new Date().toISOString().slice(0, 10);
 }
 
+const STATUS_PILL_CLASS: Record<string, string> = {
+  NOT_STARTED: "not-started",
+  IN_PROGRESS: "in-progress",
+  PENDING_REVIEW: "pending-review",
+  SUBMITTED: "submitted",
+  REJECTED: "rejected",
+};
+
 type Tab = "overview" | "locations" | "helpdesk" | "audit" | "traffic";
 
 export function AdminDashboard() {
@@ -18,13 +27,16 @@ export function AdminDashboard() {
   const [tab, setTab] = useState<Tab>("overview");
 
   return (
-    <main style={{ maxWidth: 1000, margin: "2rem auto", fontFamily: "sans-serif", padding: "0 1rem" }}>
-      <header style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1rem" }}>
+    <main style={{ maxWidth: 1000, margin: "0 auto", padding: "1.4rem" }}>
+      <header className="app-header">
         <div>
-          <h1 style={{ margin: 0, fontSize: "1.3rem" }}>SOD eMIS — Admin</h1>
-          <p style={{ margin: 0, color: "#555" }}>{user?.loginCode}</p>
+          <div style={{ fontWeight: 600 }}>SOD eMIS — Admin</div>
+          <div style={{ fontSize: "0.8rem", opacity: 0.85 }}>{user?.loginCode}</div>
         </div>
-        <button onClick={logout}>Log out</button>
+        <img src={titleBanner} className="title-banner" alt="" />
+        <button onClick={logout} className="btn btn-secondary">
+          Log out
+        </button>
       </header>
 
       <div style={{ display: "flex", gap: "0.5rem", marginBottom: "1rem" }}>
@@ -32,18 +44,21 @@ export function AdminDashboard() {
           <button
             key={t}
             onClick={() => setTab(t)}
-            style={{ padding: "0.4rem 0.8rem", background: tab === t ? "#e0e7ff" : "transparent", border: "1px solid #ddd", borderRadius: 4 }}
+            className="btn btn-secondary"
+            style={{ opacity: tab === t ? 1 : 0.55, boxShadow: "none" }}
           >
             {t[0].toUpperCase() + t.slice(1)}
           </button>
         ))}
       </div>
 
-      {tab === "overview" && <OverviewTab />}
-      {tab === "locations" && <LocationsTab />}
-      {tab === "helpdesk" && <HelpdeskTab />}
-      {tab === "audit" && <AuditTab />}
-      {tab === "traffic" && <TrafficTab />}
+      <div className="dash-card">
+        {tab === "overview" && <OverviewTab />}
+        {tab === "locations" && <LocationsTab />}
+        {tab === "helpdesk" && <HelpdeskTab />}
+        {tab === "audit" && <AuditTab />}
+        {tab === "traffic" && <TrafficTab />}
+      </div>
     </main>
   );
 }
@@ -75,54 +90,60 @@ function OverviewTab() {
       <label>
         Month: <input type="month" value={monthYear} onChange={(e) => setMonthYear(e.target.value)} />
       </label>
-      {error && <p style={{ color: "crimson" }}>{error}</p>}
+      {error && <p style={{ color: "var(--red)" }}>{error}</p>}
 
-      <h3>All Locations</h3>
-      <table style={{ borderCollapse: "collapse", width: "100%", marginBottom: "1.5rem" }}>
+      <h3 style={{ color: "var(--navy-deep)" }}>All Locations</h3>
+      <table className="themed-table" style={{ marginBottom: "1.5rem" }}>
         <thead>
           <tr>
-            <th style={{ border: "1px solid #ddd", padding: "0.4rem", textAlign: "left" }}>Location</th>
-            <th style={{ border: "1px solid #ddd", padding: "0.4rem", textAlign: "left" }}>Status</th>
-            <th style={{ border: "1px solid #ddd", padding: "0.4rem", textAlign: "left" }}>Completion</th>
+            <th>Location</th>
+            <th>Status</th>
+            <th>Completion</th>
           </tr>
         </thead>
         <tbody>
           {locations.map((loc) => (
             <tr key={loc.location_code}>
-              <td style={{ border: "1px solid #ddd", padding: "0.4rem" }}>
+              <td>
                 {loc.location_name} ({loc.location_code})
               </td>
-              <td style={{ border: "1px solid #ddd", padding: "0.4rem" }}>{loc.status}</td>
-              <td style={{ border: "1px solid #ddd", padding: "0.4rem" }}>{loc.completion_pct}%</td>
+              <td>
+                <span className={`status-pill ${STATUS_PILL_CLASS[loc.status] ?? "not-started"}`}>{loc.status}</span>
+              </td>
+              <td>{loc.completion_pct}%</td>
             </tr>
           ))}
         </tbody>
       </table>
 
-      <h3>Revision Requests</h3>
-      <table style={{ borderCollapse: "collapse", width: "100%" }}>
+      <h3 style={{ color: "var(--navy-deep)" }}>Revision Requests</h3>
+      <table className="themed-table">
         <thead>
           <tr>
-            <th style={{ border: "1px solid #ddd", padding: "0.4rem", textAlign: "left" }}>Location</th>
-            <th style={{ border: "1px solid #ddd", padding: "0.4rem", textAlign: "left" }}>Month</th>
-            <th style={{ border: "1px solid #ddd", padding: "0.4rem", textAlign: "left" }}>Reason</th>
-            <th style={{ border: "1px solid #ddd", padding: "0.4rem", textAlign: "left" }}>Status</th>
-            <th style={{ border: "1px solid #ddd", padding: "0.4rem" }} />
+            <th>Location</th>
+            <th>Month</th>
+            <th>Reason</th>
+            <th>Status</th>
+            <th />
           </tr>
         </thead>
         <tbody>
           {requests.map((r) => (
             <tr key={r.id}>
-              <td style={{ border: "1px solid #ddd", padding: "0.4rem" }}>{r.location_name}</td>
-              <td style={{ border: "1px solid #ddd", padding: "0.4rem" }}>{r.month_year.slice(0, 7)}</td>
-              <td style={{ border: "1px solid #ddd", padding: "0.4rem" }}>{r.reason}</td>
-              <td style={{ border: "1px solid #ddd", padding: "0.4rem" }}>{r.status}</td>
-              <td style={{ border: "1px solid #ddd", padding: "0.4rem" }}>
+              <td>{r.location_name}</td>
+              <td>{r.month_year.slice(0, 7)}</td>
+              <td>{r.reason}</td>
+              <td>{r.status}</td>
+              <td>
                 {r.status === "PENDING" && (
-                  <>
-                    <button onClick={() => handle(() => api.approveRevisionRequest(r.id))}>Approve</button>{" "}
-                    <button onClick={() => handle(() => api.rejectRevisionRequest(r.id))}>Reject</button>
-                  </>
+                  <div style={{ display: "flex", gap: "0.4rem" }}>
+                    <button onClick={() => handle(() => api.approveRevisionRequest(r.id))} className="btn btn-approve" style={{ fontSize: "0.8rem", padding: "0.3rem 0.6rem" }}>
+                      Approve
+                    </button>
+                    <button onClick={() => handle(() => api.rejectRevisionRequest(r.id))} className="btn btn-secondary" style={{ fontSize: "0.8rem", padding: "0.3rem 0.6rem" }}>
+                      Reject
+                    </button>
+                  </div>
                 )}
               </td>
             </tr>
@@ -156,22 +177,22 @@ function LocationsTab() {
 
   return (
     <div>
-      {error && <p style={{ color: "crimson" }}>{error}</p>}
-      <table style={{ borderCollapse: "collapse", width: "100%" }}>
+      {error && <p style={{ color: "var(--red)" }}>{error}</p>}
+      <table className="themed-table">
         <thead>
           <tr>
-            <th style={{ border: "1px solid #ddd", padding: "0.4rem", textAlign: "left" }}>Location</th>
-            <th style={{ border: "1px solid #ddd", padding: "0.4rem", textAlign: "left" }}>Zone</th>
-            <th style={{ border: "1px solid #ddd", padding: "0.4rem", textAlign: "left" }}>Excluded (non-operational)</th>
+            <th>Location</th>
+            <th>Zone</th>
+            <th>Excluded (non-operational)</th>
           </tr>
         </thead>
         <tbody>
           {locations.map((loc) => (
             <tr key={loc.code}>
-              <td style={{ border: "1px solid #ddd", padding: "0.4rem" }}>
+              <td>
                 {loc.name} ({loc.code})
               </td>
-              <td style={{ border: "1px solid #ddd", padding: "0.4rem" }}>
+              <td>
                 <select value={loc.zone_id ?? ""} onChange={(e) => updateZone(loc.code, e.target.value)}>
                   <option value="">None</option>
                   {zones.map((z) => (
@@ -181,7 +202,7 @@ function LocationsTab() {
                   ))}
                 </select>
               </td>
-              <td style={{ border: "1px solid #ddd", padding: "0.4rem" }}>
+              <td>
                 <input type="checkbox" checked={loc.is_excluded} onChange={(e) => toggleExcluded(loc.code, e.target.checked)} />
               </td>
             </tr>
@@ -211,11 +232,11 @@ function HelpdeskTab() {
 
   return (
     <div>
-      {error && <p style={{ color: "crimson" }}>{error}</p>}
+      {error && <p style={{ color: "var(--red)" }}>{error}</p>}
       {tickets.map((t) => (
-        <div key={t.id} style={{ border: "1px solid #ddd", borderRadius: 6, padding: "0.75rem", marginBottom: "0.75rem" }}>
+        <div key={t.id} className="sec-card">
           <p style={{ margin: 0 }}>
-            <strong>{t.location_code}</strong> — {t.issue_type} — <em>{t.status}</em>
+            <strong style={{ color: "var(--navy)" }}>{t.location_code}</strong> — {t.issue_type} — <em>{t.status}</em>
           </p>
           <p style={{ margin: "0.25rem 0" }}>{t.issue_desc}</p>
           {t.admin_response && <p style={{ color: "#065f46" }}>Response: {t.admin_response}</p>}
@@ -224,10 +245,12 @@ function HelpdeskTab() {
               <textarea
                 value={responses[t.id] ?? ""}
                 onChange={(e) => setResponses((prev) => ({ ...prev, [t.id]: e.target.value }))}
-                style={{ width: "100%", padding: "0.4rem" }}
+                style={{ width: "100%" }}
                 placeholder="Your response..."
               />
-              <button onClick={() => respond(t.id)}>Send Response</button>
+              <button onClick={() => respond(t.id)} className="btn btn-save" style={{ marginTop: "0.4rem" }}>
+                Send Response
+              </button>
             </div>
           )}
         </div>
@@ -242,24 +265,22 @@ function AuditTab() {
     api.getAuditLog(100).then((r) => setEntries(r.entries));
   }, []);
   return (
-    <table style={{ borderCollapse: "collapse", width: "100%", fontSize: "0.85rem" }}>
+    <table className="themed-table" style={{ fontSize: "0.85rem" }}>
       <thead>
         <tr>
-          <th style={{ border: "1px solid #ddd", padding: "0.3rem", textAlign: "left" }}>Time</th>
-          <th style={{ border: "1px solid #ddd", padding: "0.3rem", textAlign: "left" }}>Actor</th>
-          <th style={{ border: "1px solid #ddd", padding: "0.3rem", textAlign: "left" }}>Action</th>
-          <th style={{ border: "1px solid #ddd", padding: "0.3rem", textAlign: "left" }}>Entity</th>
+          <th>Time</th>
+          <th>Actor</th>
+          <th>Action</th>
+          <th>Entity</th>
         </tr>
       </thead>
       <tbody>
         {entries.map((e) => (
           <tr key={e.id}>
-            <td style={{ border: "1px solid #ddd", padding: "0.3rem" }}>{new Date(e.occurred_at).toLocaleString()}</td>
-            <td style={{ border: "1px solid #ddd", padding: "0.3rem" }}>{e.actor_login_code ?? "—"}</td>
-            <td style={{ border: "1px solid #ddd", padding: "0.3rem" }}>{e.action}</td>
-            <td style={{ border: "1px solid #ddd", padding: "0.3rem" }}>
-              {e.entity_type ? `${e.entity_type} #${e.entity_id}` : "—"}
-            </td>
+            <td>{new Date(e.occurred_at).toLocaleString()}</td>
+            <td>{e.actor_login_code ?? "—"}</td>
+            <td>{e.action}</td>
+            <td>{e.entity_type ? `${e.entity_type} #${e.entity_id}` : "—"}</td>
           </tr>
         ))}
       </tbody>
@@ -278,18 +299,18 @@ function TrafficTab() {
       <label>
         Date: <input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
       </label>
-      <table style={{ borderCollapse: "collapse", width: "100%", marginTop: "0.75rem" }}>
+      <table className="themed-table" style={{ marginTop: "0.75rem" }}>
         <thead>
           <tr>
-            <th style={{ border: "1px solid #ddd", padding: "0.3rem" }}>Hour</th>
-            <th style={{ border: "1px solid #ddd", padding: "0.3rem" }}>Distinct Logins</th>
+            <th>Hour</th>
+            <th>Distinct Logins</th>
           </tr>
         </thead>
         <tbody>
           {hours.map((h) => (
             <tr key={h.hour}>
-              <td style={{ border: "1px solid #ddd", padding: "0.3rem" }}>{h.hour}:00</td>
-              <td style={{ border: "1px solid #ddd", padding: "0.3rem" }}>{h.distinctLogins}</td>
+              <td>{h.hour}:00</td>
+              <td>{h.distinctLogins}</td>
             </tr>
           ))}
         </tbody>

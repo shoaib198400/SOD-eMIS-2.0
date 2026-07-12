@@ -9,6 +9,14 @@ const STATUS_LABELS: Record<SubmissionStatus, string> = {
   REJECTED: "Rejected — needs revision",
 };
 
+const STATUS_PILL_CLASS: Record<SubmissionStatus, string> = {
+  NOT_STARTED: "not-started",
+  IN_PROGRESS: "in-progress",
+  PENDING_REVIEW: "pending-review",
+  SUBMITTED: "submitted",
+  REJECTED: "rejected",
+};
+
 export function WorkflowBar({
   status,
   completionPct,
@@ -43,31 +51,32 @@ export function WorkflowBar({
   const canCheckerReset = role === "Checker" && status !== "SUBMITTED";
 
   return (
-    <div style={{ border: "1px solid #ccc", borderRadius: 6, padding: "0.75rem 1rem", marginBottom: "1rem" }}>
+    <div>
       <p style={{ margin: 0 }}>
-        Status: <strong>{STATUS_LABELS[status]}</strong> · Overall completion: {completionPct}%
+        <span className={`status-pill ${STATUS_PILL_CLASS[status]}`}>{STATUS_LABELS[status]}</span>{" "}
+        <span style={{ color: "var(--text-muted)", fontSize: "0.9rem" }}>Overall completion: {completionPct}%</span>
       </p>
-      {checkerNotes && <p style={{ margin: "0.25rem 0", color: "#b45309" }}>Checker notes: {checkerNotes}</p>}
-      {error && <p style={{ color: "crimson" }}>{error}</p>}
+      {checkerNotes && <p style={{ margin: "0.5rem 0 0", color: "#92400e" }}>Checker notes: {checkerNotes}</p>}
+      {error && <p style={{ color: "var(--red)" }}>{error}</p>}
 
-      <div style={{ display: "flex", gap: "0.5rem", marginTop: "0.5rem", flexWrap: "wrap" }}>
+      <div style={{ display: "flex", gap: "0.5rem", marginTop: "0.75rem", flexWrap: "wrap" }}>
         {canSubmit && (
-          <button onClick={onSubmit} disabled={busy || completionPct < 100}>
+          <button onClick={onSubmit} disabled={busy || completionPct < 100} className="btn btn-primary">
             Submit for Review
           </button>
         )}
         {canApproveReject && (
           <>
-            <button onClick={onApprove} disabled={busy}>
-              Approve & Lock
+            <button onClick={onApprove} disabled={busy} className="btn btn-approve">
+              Approve &amp; Lock
             </button>
-            <button onClick={() => setShowReject((v) => !v)} disabled={busy}>
+            <button onClick={() => setShowReject((v) => !v)} disabled={busy} className="btn btn-secondary">
               Reject to Maker
             </button>
           </>
         )}
         {(canMakerReset || canCheckerReset) && (
-          <button onClick={() => setShowReset((v) => !v)} disabled={busy}>
+          <button onClick={() => setShowReset((v) => !v)} disabled={busy} className="btn btn-secondary">
             Reset Draft
           </button>
         )}
@@ -79,7 +88,7 @@ export function WorkflowBar({
             placeholder="Reason for rejection (required)"
             value={rejectNote}
             onChange={(e) => setRejectNote(e.target.value)}
-            style={{ width: "100%", padding: "0.4rem" }}
+            style={{ width: "100%" }}
           />
           <button
             onClick={() => {
@@ -88,6 +97,8 @@ export function WorkflowBar({
               setShowReject(false);
             }}
             disabled={!rejectNote.trim() || busy}
+            className="btn btn-primary"
+            style={{ marginTop: "0.4rem" }}
           >
             Confirm Reject
           </button>
@@ -100,7 +111,7 @@ export function WorkflowBar({
             placeholder="Reason for reset (required)"
             value={resetReason}
             onChange={(e) => setResetReason(e.target.value)}
-            style={{ width: "100%", padding: "0.4rem" }}
+            style={{ width: "100%" }}
           />
           <button
             onClick={() => {
@@ -109,6 +120,8 @@ export function WorkflowBar({
               setShowReset(false);
             }}
             disabled={!resetReason.trim() || busy}
+            className="btn btn-secondary"
+            style={{ marginTop: "0.4rem" }}
           >
             Confirm Reset (clears all sections for this month)
           </button>

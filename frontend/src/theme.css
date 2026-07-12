@@ -1,0 +1,276 @@
+/* Design tokens ported from the reference app's _base_css/_login_css/_dashboard_css
+   (colors, gradients, radii, shadows) — same brand identity, laid out for React/flexbox
+   rather than cloned Streamlit selectors. */
+
+:root {
+  --navy-deepest: #001060;
+  --navy-deep: #001f5e;
+  --navy: #002b8f;
+  --navy-mid: #003087;
+  --navy-bright: #003eb5;
+  --sidebar-start: #072a86;
+  --sidebar-end: #041d63;
+  --pill-start: #1e63ff;
+  --pill-end: #2d8cff;
+
+  --red: #e53935;
+  --red-dark: #c62828;
+  --red-light: #ef5350;
+  --red-light-dark: #d32f2f;
+
+  --blue-secondary: #1565c0;
+  --blue-secondary-hover: #1976d2;
+
+  --green-start: #15803d;
+  --green-end: #166534;
+
+  --border-input: #d0d8ec;
+  --bg-page-1: #edf1fa;
+  --bg-page-2: #e4eaf6;
+  --bg-page-3: #eef2f7;
+  --bg-table-even: #f0f4ff;
+  --bg-table-hover: #dce6f7;
+  --text-body: #2d3a52;
+  --text-muted: #666;
+  --text-table: #1a2a4a;
+
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 10px;
+  --radius-xl: 12px;
+  --radius-card: 14px;
+
+  --shadow-card: 0 2px 12px rgba(0, 31, 94, 0.08);
+  --shadow-deep: 0 12px 56px rgba(0, 20, 80, 0.38);
+
+  --font-body: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-body);
+  color: var(--text-body);
+  background: linear-gradient(160deg, var(--bg-page-1) 0%, var(--bg-page-2) 50%, var(--bg-page-3) 100%);
+}
+
+/* Layout shell */
+.app-shell {
+  display: flex;
+  min-height: 100vh;
+}
+
+.app-sidebar {
+  min-width: 240px;
+  max-width: 240px;
+  background: linear-gradient(180deg, var(--sidebar-start) 0%, var(--sidebar-end) 100%);
+  color: white;
+  padding: 1rem 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.app-sidebar img.side-logo {
+  width: 100%;
+  border-radius: var(--radius-md);
+  margin-bottom: 0.75rem;
+}
+
+.app-main {
+  flex: 1;
+  min-width: 0;
+  padding: 1.4rem;
+}
+
+.app-header {
+  background: linear-gradient(135deg, var(--navy-deepest) 0%, var(--navy) 55%, var(--navy-bright) 100%);
+  color: white;
+  border-radius: var(--radius-card);
+  min-height: 80px;
+  padding: 12px 22px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  box-shadow: var(--shadow-card);
+  margin-bottom: 1.4rem;
+}
+
+.app-header img.title-banner {
+  height: 44px;
+}
+
+.role-badge {
+  background: rgba(255, 255, 255, 0.14);
+  border-radius: 20px;
+  padding: 0.3rem 0.8rem;
+  font-size: 0.85rem;
+}
+
+/* Nav buttons in sidebar */
+.nav-btn {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 0.55rem 0.7rem;
+  border-radius: var(--radius-md);
+  border: 1px solid transparent;
+  background: rgba(255, 255, 255, 0.08);
+  color: white;
+  cursor: pointer;
+  font-size: 0.85rem;
+  font-family: var(--font-body);
+  transition: background 0.15s, box-shadow 0.15s;
+}
+
+.nav-btn:hover {
+  background: rgba(255, 255, 255, 0.18);
+}
+
+.nav-btn.active {
+  background: linear-gradient(135deg, var(--pill-start) 0%, var(--pill-end) 100%);
+  box-shadow: 0 2px 10px rgba(30, 99, 255, 0.4);
+  border: none;
+}
+
+/* Cards */
+.dash-card {
+  background: white;
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-card);
+  border-top: 3px solid var(--navy-deep);
+  padding: 1rem 1.25rem;
+  margin-bottom: 1.25rem;
+}
+
+.sec-card {
+  background: white;
+  border-radius: var(--radius-xl);
+  border-left: 3px solid #dee2e6;
+  box-shadow: var(--shadow-card);
+  padding: 0.75rem 1rem;
+  margin-bottom: 0.85rem;
+}
+
+/* Buttons */
+.btn {
+  border: none;
+  border-radius: var(--radius-lg);
+  padding: 0.55rem 1.1rem;
+  font-family: var(--font-body);
+  font-size: 0.9rem;
+  cursor: pointer;
+  color: white;
+  transition: transform 0.1s, box-shadow 0.15s;
+}
+.btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+.btn:not(:disabled):hover {
+  transform: translateY(-1px);
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, var(--red) 0%, var(--red-dark) 100%);
+  box-shadow: 0 4px 14px rgba(198, 40, 40, 0.28);
+}
+.btn-primary:not(:disabled):hover {
+  background: linear-gradient(135deg, var(--red-light) 0%, var(--red-light-dark) 100%);
+  box-shadow: 0 6px 20px rgba(198, 40, 40, 0.38);
+}
+
+.btn-secondary {
+  background: var(--blue-secondary);
+  box-shadow: 0 4px 14px rgba(21, 101, 192, 0.25);
+}
+.btn-secondary:not(:disabled):hover {
+  background: var(--blue-secondary-hover);
+  box-shadow: 0 6px 20px rgba(21, 101, 192, 0.38);
+}
+
+.btn-save {
+  background: linear-gradient(135deg, var(--navy-deep) 0%, var(--navy-mid) 100%);
+  box-shadow: 0 4px 14px rgba(0, 31, 94, 0.25);
+}
+
+.btn-approve {
+  background: linear-gradient(135deg, var(--green-start) 0%, var(--green-end) 100%);
+  box-shadow: 0 4px 14px rgba(21, 128, 61, 0.28);
+}
+
+/* Forms */
+input[type="text"],
+input[type="password"],
+input[type="number"],
+input[type="date"],
+input[type="month"],
+select,
+textarea {
+  border: 1px solid var(--border-input);
+  border-radius: 9px;
+  padding: 0.5rem;
+  font-family: var(--font-body);
+  background: #f7f9fc;
+  color: var(--text-body);
+}
+input:focus,
+select:focus,
+textarea:focus {
+  outline: none;
+  border-color: var(--navy-deep);
+  box-shadow: 0 0 0 3px rgba(0, 51, 160, 0.15);
+}
+
+/* Tables */
+.themed-table {
+  border-collapse: collapse;
+  width: 100%;
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  box-shadow: var(--shadow-card);
+}
+.themed-table th {
+  background: linear-gradient(135deg, var(--navy-deepest) 0%, var(--navy) 100%);
+  color: white;
+  text-align: left;
+  padding: 0.5rem 0.6rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+.themed-table td {
+  padding: 0.5rem 0.6rem;
+  border-bottom: 1px solid #edf1fb;
+  color: var(--text-table);
+  font-size: 0.9rem;
+}
+.themed-table tr:nth-child(even) td {
+  background: var(--bg-table-even);
+}
+.themed-table tr:hover td {
+  background: var(--bg-table-hover);
+}
+
+.auto-box {
+  background: linear-gradient(135deg, #f0f4ff, #e8eefa);
+  border: 1px solid #c8d4f0;
+  border-radius: 6px;
+  padding: 0.4rem 0.5rem;
+  color: var(--text-muted);
+}
+
+.status-pill {
+  display: inline-block;
+  padding: 0.25rem 0.7rem;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+.status-pill.not-started { background: #e5e7eb; color: #374151; }
+.status-pill.in-progress { background: #fef3c7; color: #92400e; }
+.status-pill.pending-review { background: #dbeafe; color: #1e40af; }
+.status-pill.submitted { background: #dcfce7; color: #166534; }
+.status-pill.rejected { background: #fee2e2; color: #991b1b; }

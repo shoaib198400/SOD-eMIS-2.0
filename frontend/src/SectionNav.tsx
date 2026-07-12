@@ -14,7 +14,7 @@ export function SectionNav({
   onSelect: (selection: NavSelection) => void;
 }) {
   return (
-    <nav style={{ minWidth: 220 }}>
+    <nav style={{ display: "flex", flexDirection: "column", gap: "0.3rem" }}>
       {Object.entries(SECTION_NAMES).map(([num, name]) => {
         const sectionNo = Number(num);
         const complete = sectionsComplete[sectionNo];
@@ -22,37 +22,13 @@ export function SectionNav({
           <button
             key={sectionNo}
             onClick={() => onSelect(sectionNo)}
-            style={{
-              display: "block",
-              width: "100%",
-              textAlign: "left",
-              padding: "0.5rem",
-              marginBottom: "0.25rem",
-              background: selected === sectionNo ? "#e0e7ff" : "transparent",
-              border: "1px solid #ddd",
-              borderRadius: 4,
-              cursor: "pointer",
-            }}
+            className={`nav-btn${selected === sectionNo ? " active" : ""}`}
           >
             {complete ? "✅" : "⬜"} {name}
           </button>
         );
       })}
-      <button
-        onClick={() => onSelect("MI")}
-        style={{
-          display: "block",
-          width: "100%",
-          textAlign: "left",
-          padding: "0.5rem",
-          marginBottom: "0.25rem",
-          background: selected === "MI" ? "#e0e7ff" : "transparent",
-          border: "1px solid #ddd",
-          borderRadius: 4,
-          cursor: "pointer",
-          fontWeight: 600,
-        }}
-      >
+      <button onClick={() => onSelect("MI")} className={`nav-btn${selected === "MI" ? " active" : ""}`} style={{ fontWeight: 600 }}>
         {miComplete ? "✅" : "⬜"} S5A — M&amp;I Details
       </button>
     </nav>

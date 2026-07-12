@@ -22,9 +22,14 @@ export function HelpdeskWidget() {
 
   return (
     <div style={{ position: "relative" }}>
-      <button onClick={() => setOpen((v) => !v)}>Help</button>
+      <button onClick={() => setOpen((v) => !v)} className="btn btn-secondary">
+        Help
+      </button>
       {open && (
-        <div style={{ position: "absolute", right: 0, top: "2rem", width: 280, background: "white", border: "1px solid #ccc", borderRadius: 6, padding: "0.75rem", zIndex: 10 }}>
+        <div
+          className="dash-card"
+          style={{ position: "absolute", right: 0, top: "2.5rem", width: 280, zIndex: 10, color: "var(--text-body)" }}
+        >
           {sent ? (
             <p>Your ticket was submitted. An admin will respond soon.</p>
           ) : (
@@ -33,16 +38,16 @@ export function HelpdeskWidget() {
                 placeholder="Issue type (e.g. Login Issue)"
                 value={issueType}
                 onChange={(e) => setIssueType(e.target.value)}
-                style={{ width: "100%", padding: "0.4rem", marginBottom: "0.4rem" }}
+                style={{ width: "100%", marginBottom: "0.4rem" }}
               />
               <textarea
                 placeholder="Describe the issue"
                 value={issueDesc}
                 onChange={(e) => setIssueDesc(e.target.value)}
-                style={{ width: "100%", padding: "0.4rem", minHeight: 60 }}
+                style={{ width: "100%", minHeight: 60 }}
               />
-              {error && <p style={{ color: "crimson" }}>{error}</p>}
-              <button onClick={submit} disabled={!issueType.trim() || !issueDesc.trim()}>
+              {error && <p style={{ color: "var(--red)" }}>{error}</p>}
+              <button onClick={submit} disabled={!issueType.trim() || !issueDesc.trim()} className="btn btn-primary" style={{ marginTop: "0.4rem" }}>
                 Submit Ticket
               </button>
             </>
