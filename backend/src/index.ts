@@ -6,6 +6,7 @@ import { authRouter } from "./routes/auth";
 import { submissionsRouter } from "./routes/submissions";
 import { fieldDefsRouter } from "./routes/fieldDefs";
 import { miRouter } from "./routes/mi";
+import { zoneRouter } from "./routes/zone";
 import { REFRESHED_TOKEN_HEADER } from "./auth";
 
 const app = express();
@@ -32,6 +33,7 @@ app.use("/api/auth", authRouter);
 app.use("/api/submissions", submissionsRouter);
 app.use("/api/field-defs", fieldDefsRouter);
 app.use("/api/mi", miRouter);
+app.use("/api/zone", zoneRouter);
 
 app.listen(PORT, () => {
   console.log(`Backend listening on port ${PORT}`);

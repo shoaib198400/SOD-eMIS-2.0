@@ -38,9 +38,41 @@ try {
      on conflict (location_code, tank_no) do nothing`
   );
 
-  console.log("Seeded: zone 'Test Zone', location 'TESTLOC1', tank master (TK-101, TK-102)");
+  await pool.query(
+    `insert into locations (code, name, loc_type, zone_id)
+     values ('TESTLOC2', 'Test Location 2', 'HPCL', $1)
+     on conflict (code) do update set name = excluded.name, zone_id = excluded.zone_id`,
+    [zoneId]
+  );
+  await pool.query(
+    `insert into users (login_code, location_code, zone_id, role, password_hash, is_first_login)
+     values ('TESTLOC2', 'TESTLOC2', $1, 'Maker', $2, false)
+     on conflict (login_code) do update set password_hash = excluded.password_hash`,
+    [zoneId, passwordHash]
+  );
+
+  const zoneUserHash = await bcrypt.hash("Test@1234", 10);
+  await pool.query(
+    `insert into users (login_code, location_code, zone_id, role, password_hash, is_first_login)
+     values ('TESTZONE', null, $1, 'Zone', $2, false)
+     on conflict (login_code) do update set password_hash = excluded.password_hash`,
+    [zoneId, zoneUserHash]
+  );
+
+  const adminHash = await bcrypt.hash("Test@1234", 10);
+  await pool.query(
+    `insert into users (login_code, location_code, zone_id, role, password_hash, is_first_login)
+     values ('TESTADMIN', null, null, 'Admin', $1, false)
+     on conflict (login_code) do update set password_hash = excluded.password_hash`,
+    [adminHash]
+  );
+
+  console.log("Seeded: zone 'Test Zone', locations TESTLOC1 + TESTLOC2, tank master (TK-101, TK-102)");
   console.log("  Maker:   TESTLOC1  / Test@1234");
+  console.log("  Maker:   TESTLOC2  / Test@1234");
   console.log("  Checker: TESTLOC1C / Test@1234");
+  console.log("  Zone:    TESTZONE  / Test@1234");
+  console.log("  Admin:   TESTADMIN / Test@1234");
 } catch (e) {
   console.error("Seed failed:", e.message);
   process.exitCode = 1;

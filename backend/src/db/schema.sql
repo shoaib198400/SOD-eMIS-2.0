@@ -123,3 +123,20 @@ create table if not exists tank_master (
   tank_no text not null,
   unique (location_code, tank_no)
 );
+
+-- Zone requesting a re-open of an already-SUBMITTED month; Admin approves (unlocks it, reusing
+-- the REJECTED status so the Maker can edit and resubmit) or rejects.
+create table if not exists revision_requests (
+  id bigserial primary key,
+  location_code text not null references locations(code),
+  month_year date not null,
+  requested_by bigint not null references users(id),
+  reason text not null,
+  status text not null default 'PENDING' check (status in ('PENDING', 'APPROVED', 'REJECTED')),
+  actioned_by bigint references users(id),
+  actioned_at timestamptz,
+  created_at timestamptz not null default now()
+);
+
+create index if not exists idx_revision_requests_location_month
+  on revision_requests (location_code, month_year);
