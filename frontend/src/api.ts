@@ -62,15 +62,23 @@ export interface FieldDefsResponse {
   fields: FieldDef[];
 }
 
+export type SubmissionStatus = "NOT_STARTED" | "IN_PROGRESS" | "PENDING_REVIEW" | "SUBMITTED" | "REJECTED";
+
 export interface SubmissionResponse {
-  status: "NOT_STARTED" | "IN_PROGRESS" | "PENDING_REVIEW" | "SUBMITTED" | "REJECTED";
+  status: SubmissionStatus;
   completionPct: number;
   checkerNotes: string | null;
   values: Record<string, string>;
+  sectionsComplete: Record<number, boolean>;
 }
 
 export interface SaveSectionResponse extends SubmissionResponse {
   sectionComplete: boolean;
+}
+
+export interface DetailRow {
+  id?: number;
+  [key: string]: string | number | undefined;
 }
 
 export interface MeResponse {
@@ -106,5 +114,30 @@ export const api = {
     request<SaveSectionResponse>(`/api/submissions/${locationCode}/${monthYear}/sections/${sectionNo}`, {
       method: "PATCH",
       body: JSON.stringify({ values }),
+    }),
+  submit: (locationCode: string, monthYear: string) =>
+    request<{ status: SubmissionStatus }>(`/api/submissions/${locationCode}/${monthYear}/submit`, {
+      method: "POST",
+    }),
+  approve: (locationCode: string, monthYear: string) =>
+    request<{ status: SubmissionStatus }>(`/api/submissions/${locationCode}/${monthYear}/approve`, {
+      method: "POST",
+    }),
+  reject: (locationCode: string, monthYear: string, note: string) =>
+    request<{ status: SubmissionStatus }>(`/api/submissions/${locationCode}/${monthYear}/reject`, {
+      method: "POST",
+      body: JSON.stringify({ note }),
+    }),
+  reset: (locationCode: string, monthYear: string, reason: string) =>
+    request<{ status: SubmissionStatus }>(`/api/submissions/${locationCode}/${monthYear}/reset`, {
+      method: "POST",
+      body: JSON.stringify({ reason }),
+    }),
+  getDetailTable: (locationCode: string, monthYear: string, tableType: string) =>
+    request<{ rows: DetailRow[] }>(`/api/submissions/${locationCode}/${monthYear}/detail-tables/${tableType}`),
+  saveDetailTable: (locationCode: string, monthYear: string, tableType: string, rows: DetailRow[]) =>
+    request<{ rows: DetailRow[] }>(`/api/submissions/${locationCode}/${monthYear}/detail-tables/${tableType}`, {
+      method: "PUT",
+      body: JSON.stringify({ rows }),
     }),
 };

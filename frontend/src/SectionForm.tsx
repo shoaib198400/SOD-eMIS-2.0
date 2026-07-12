@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { api } from "./api";
-import type { FieldDef, SubmissionResponse } from "./api";
+import type { FieldDef } from "./api";
 
 function isFieldVisible(field: FieldDef, values: Record<string, string>): boolean {
   if (!field.showWhen) return true;
@@ -24,15 +24,18 @@ export function SectionForm({
   locationCode,
   monthYear,
   sectionNo,
+  disabled,
+  onSaved,
 }: {
   locationCode: string;
   monthYear: string;
   sectionNo: number;
+  disabled: boolean;
+  onSaved?: () => void;
 }) {
   const [fields, setFields] = useState<FieldDef[] | null>(null);
   const [sectionName, setSectionName] = useState("");
   const [values, setValues] = useState<Record<string, string>>({});
-  const [submission, setSubmission] = useState<SubmissionResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -45,14 +48,12 @@ export function SectionForm({
       .then(([defs, sub]) => {
         setFields(defs.fields);
         setSectionName(defs.sectionName);
-        setSubmission(sub);
         setValues(sub.values);
+        setSectionComplete(Boolean(sub.sectionsComplete?.[sectionNo]));
       })
       .catch((e) => setError((e as Error).message))
       .finally(() => setLoading(false));
   }, [locationCode, monthYear, sectionNo]);
-
-  const isLocked = submission?.status === "SUBMITTED" || submission?.status === "PENDING_REVIEW";
 
   async function handleSave() {
     setSaving(true);
@@ -64,8 +65,8 @@ export function SectionForm({
       }
       const result = await api.saveSection(locationCode, monthYear, sectionNo, editableValues);
       setValues(result.values);
-      setSubmission(result);
       setSectionComplete(result.sectionComplete);
+      onSaved?.();
     } catch (e) {
       setError((e as Error).message);
     } finally {
@@ -81,10 +82,9 @@ export function SectionForm({
     <div>
       <h2 style={{ marginBottom: 0 }}>{sectionName}</h2>
       <p style={{ color: "#555", marginTop: "0.25rem" }}>
-        Status: <strong>{submission?.status}</strong> · Completion: {submission?.completionPct}%
-        {sectionComplete && " · Section 1 complete"}
+        {sectionComplete ? "✅ Section complete" : "⬜ Section incomplete"}
       </p>
-      {isLocked && <p style={{ color: "#b45309" }}>This month is locked and cannot be edited.</p>}
+      {disabled && <p style={{ color: "#b45309" }}>This section is read-only right now.</p>}
 
       {groupBySub(fields).map((group) => (
         <fieldset key={group.sub} style={{ marginBottom: "1rem", border: "1px solid #ddd", borderRadius: 6 }}>
@@ -97,7 +97,7 @@ export function SectionForm({
                   key={field.key}
                   field={field}
                   value={values[field.key] ?? ""}
-                  disabled={isLocked}
+                  disabled={disabled}
                   onChange={(v) => setValues((prev) => ({ ...prev, [field.key]: v }))}
                 />
               ))}
@@ -105,7 +105,7 @@ export function SectionForm({
         </fieldset>
       ))}
 
-      {!isLocked && (
+      {!disabled && (
         <button onClick={handleSave} disabled={saving} style={{ padding: "0.6rem 1.2rem" }}>
           {saving ? "Saving..." : "Save Section"}
         </button>
