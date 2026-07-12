@@ -3,6 +3,7 @@ import bcrypt from "bcryptjs";
 import { pool } from "../db/pool";
 import { newSessionToken } from "../auth";
 import { requireAuth } from "../middleware/requireAuth";
+import { logAudit } from "../auditLog";
 
 export const authRouter = Router();
 
@@ -40,6 +41,7 @@ authRouter.post("/login", async (req, res) => {
     "update users set current_session_jti = $1, current_session_started_at = now(), last_login_at = now() where id = $2",
     [jti, user.id]
   );
+  await logAudit({ actorUserId: user.id, actorLocationCode: user.location_code, action: "Login" });
 
   res.json({
     ok: true,

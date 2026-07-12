@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { pool } from "../db/pool";
 import { requireAuth, requireRole } from "../middleware/requireAuth";
+import { logAudit } from "../auditLog";
 
 export const zoneRouter = Router();
 
@@ -87,6 +88,14 @@ zoneRouter.post("/revision-requests", requireAuth, requireRole("Zone"), async (r
      values ($1, $2, $3, $4) returning id`,
     [locationCode, monthDate, req.user!.sub, reason.trim()]
   );
+  await logAudit({
+    actorUserId: req.user!.sub,
+    actorLocationCode: locationCode,
+    action: "RevisionRequest",
+    entityType: "revision_request",
+    entityId: String(result.rows[0].id),
+    details: { monthYear, reason },
+  });
   res.json({ ok: true, id: result.rows[0].id });
 });
 
@@ -129,6 +138,13 @@ zoneRouter.patch("/revision-requests/:id/approve", requireAuth, requireRole("Adm
       [`Correction approved by HQO: ${rr.reason}`, rr.location_code, rr.month_year]
     );
     await client.query("COMMIT");
+    await logAudit({
+      actorUserId: req.user!.sub,
+      actorLocationCode: rr.location_code,
+      action: "ApproveRevision",
+      entityType: "revision_request",
+      entityId: String(id),
+    });
     res.json({ ok: true });
   } catch (e) {
     await client.query("ROLLBACK");
@@ -141,12 +157,19 @@ zoneRouter.patch("/revision-requests/:id/approve", requireAuth, requireRole("Adm
 zoneRouter.patch("/revision-requests/:id/reject", requireAuth, requireRole("Admin"), async (req, res) => {
   const id = Number(req.params.id);
   const result = await pool.query(
-    "update revision_requests set status = 'REJECTED', actioned_by = $1, actioned_at = now() where id = $2 and status = 'PENDING' returning id",
+    "update revision_requests set status = 'REJECTED', actioned_by = $1, actioned_at = now() where id = $2 and status = 'PENDING' returning id, location_code",
     [req.user!.sub, id]
   );
   if (result.rowCount === 0) {
     res.status(409).json({ error: "not_pending" });
     return;
   }
+  await logAudit({
+    actorUserId: req.user!.sub,
+    actorLocationCode: result.rows[0].location_code,
+    action: "RejectRevision",
+    entityType: "revision_request",
+    entityId: String(id),
+  });
   res.json({ ok: true });
 });

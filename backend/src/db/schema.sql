@@ -140,3 +140,35 @@ create table if not exists revision_requests (
 
 create index if not exists idx_revision_requests_location_month
   on revision_requests (location_code, month_year);
+
+-- Phase 4 additions: location management (zone reassignment already covered by locations.zone_id;
+-- exclusion list is locations.is_excluded), helpdesk tickets, and structured audit logging.
+
+create table if not exists helpdesk_tickets (
+  id bigserial primary key,
+  created_at timestamptz not null default now(),
+  location_code text not null references locations(code),
+  user_id bigint references users(id),
+  issue_type text not null,
+  issue_desc text not null,
+  status text not null default 'OPEN' check (status in ('OPEN', 'RESPONDED', 'CLOSED')),
+  admin_response text,
+  responded_at timestamptz,
+  responded_by bigint references users(id)
+);
+
+create index if not exists idx_helpdesk_tickets_status on helpdesk_tickets (status);
+
+create table if not exists audit_log (
+  id bigserial primary key,
+  occurred_at timestamptz not null default now(),
+  actor_user_id bigint references users(id),
+  actor_location_code text,
+  action text not null,
+  entity_type text,
+  entity_id text,
+  details jsonb
+);
+
+create index if not exists idx_audit_log_occurred_at on audit_log (occurred_at);
+create index if not exists idx_audit_log_actor on audit_log (actor_user_id);

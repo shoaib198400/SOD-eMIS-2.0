@@ -6,6 +6,7 @@ import { SECTION_FIELDS, getSkipSections } from "../formDefs";
 import { evaluateAutoCalc } from "../autoCalc";
 import { computeOverallCompletion } from "../completion";
 import { getMiCompletion } from "./mi";
+import { logAudit } from "../auditLog";
 
 export const submissionsRouter = Router();
 
@@ -264,6 +265,14 @@ submissionsRouter.post(
         [submission.id]
       );
       await client.query("COMMIT");
+      await logAudit({
+        actorUserId: req.user!.sub,
+        actorLocationCode: locationCode,
+        action: "SubmitForReview",
+        entityType: "monthly_submission",
+        entityId: String(submission.id),
+        details: { monthYear },
+      });
       res.json({ status: "PENDING_REVIEW" });
     } catch (e) {
       await client.query("ROLLBACK");
@@ -327,6 +336,14 @@ submissionsRouter.post(
       );
 
       await client.query("COMMIT");
+      await logAudit({
+        actorUserId: req.user!.sub,
+        actorLocationCode: locationCode,
+        action: "ApproveSubmission",
+        entityType: "monthly_submission",
+        entityId: String(submission.id),
+        details: { monthYear },
+      });
       res.json({ status: "SUBMITTED" });
     } catch (e) {
       await client.query("ROLLBACK");
@@ -373,6 +390,14 @@ submissionsRouter.post(
       res.status(409).json({ error: "not_pending", message: "This month is not awaiting review" });
       return;
     }
+    await logAudit({
+      actorUserId: req.user!.sub,
+      actorLocationCode: locationCode,
+      action: "RejectSubmission",
+      entityType: "monthly_submission",
+      entityId: String(result.rows[0].id),
+      details: { monthYear, note },
+    });
     res.json({ status: "REJECTED" });
   }
 );
@@ -445,6 +470,14 @@ submissionsRouter.post(
       );
 
       await client.query("COMMIT");
+      await logAudit({
+        actorUserId: req.user!.sub,
+        actorLocationCode: locationCode,
+        action: "ResetDraft",
+        entityType: "monthly_submission",
+        entityId: String(submission.id),
+        details: { monthYear, reason },
+      });
       res.json({ status: "NOT_STARTED" });
     } catch (e) {
       await client.query("ROLLBACK");
