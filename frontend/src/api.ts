@@ -134,6 +134,46 @@ export interface RevisionRequest {
   created_at: string;
 }
 
+export interface AdminLocation {
+  code: string;
+  name: string;
+  loc_type: string;
+  zone_id: number | null;
+  zone_name: string | null;
+  active: boolean;
+  is_excluded: boolean;
+}
+
+export interface Zone {
+  id: number;
+  name: string;
+}
+
+export interface HelpdeskTicket {
+  id: number;
+  created_at: string;
+  location_code: string;
+  user_id: number;
+  issue_type: string;
+  issue_desc: string;
+  status: "OPEN" | "RESPONDED" | "CLOSED";
+  admin_response: string | null;
+  responded_at: string | null;
+  responded_by: number | null;
+}
+
+export interface AuditLogEntry {
+  id: number;
+  occurred_at: string;
+  actor_user_id: number | null;
+  actor_login_code: string | null;
+  actor_location_code: string | null;
+  action: string;
+  entity_type: string | null;
+  entity_id: string | null;
+  details: Record<string, unknown> | null;
+}
+
 export interface MeResponse {
   userId: number;
   loginCode: string;
@@ -214,4 +254,27 @@ export const api = {
     request<{ ok: boolean }>(`/api/zone/revision-requests/${id}/approve`, { method: "PATCH" }),
   rejectRevisionRequest: (id: number) =>
     request<{ ok: boolean }>(`/api/zone/revision-requests/${id}/reject`, { method: "PATCH" }),
+  getAdminLocations: () => request<{ locations: AdminLocation[] }>("/api/admin/locations"),
+  getZones: () => request<{ zones: Zone[] }>("/api/admin/zones"),
+  updateLocation: (code: string, updates: { zoneId?: number; isExcluded?: boolean }) =>
+    request<{ ok: boolean }>(`/api/admin/locations/${code}`, {
+      method: "PATCH",
+      body: JSON.stringify(updates),
+    }),
+  getAdminHelpdeskTickets: (status?: string) =>
+    request<{ tickets: HelpdeskTicket[] }>(`/api/admin/helpdesk-tickets${status ? `?status=${status}` : ""}`),
+  respondToTicket: (id: number, response: string, status: "RESPONDED" | "CLOSED") =>
+    request<{ ok: boolean }>(`/api/admin/helpdesk-tickets/${id}`, {
+      method: "PATCH",
+      body: JSON.stringify({ response, status }),
+    }),
+  getAuditLog: (limit = 100) => request<{ entries: AuditLogEntry[] }>(`/api/admin/audit-log?limit=${limit}`),
+  getTraffic: (date: string) =>
+    request<{ date: string; hours: { hour: number; distinctLogins: number }[] }>(`/api/admin/traffic?date=${date}`),
+  fileHelpdeskTicket: (issueType: string, issueDesc: string) =>
+    request<{ ok: boolean; id: number }>("/api/helpdesk/tickets", {
+      method: "POST",
+      body: JSON.stringify({ issueType, issueDesc }),
+    }),
+  getMyHelpdeskTickets: () => request<{ tickets: HelpdeskTicket[] }>("/api/helpdesk/tickets"),
 };

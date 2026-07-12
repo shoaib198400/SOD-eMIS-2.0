@@ -8,6 +8,8 @@ import { WorkflowBar } from "./WorkflowBar";
 import { DetailTableEditor } from "./DetailTableEditor";
 import { MiPage } from "./MiPage";
 import { ZoneDashboard } from "./ZoneDashboard";
+import { AdminDashboard } from "./AdminDashboard";
+import { HelpdeskWidget } from "./HelpdeskWidget";
 import { api } from "./api";
 import type { SubmissionResponse } from "./api";
 
@@ -45,6 +47,9 @@ function Dashboard() {
 
   if (user?.role === "Zone") {
     return <ZoneDashboard />;
+  }
+  if (user?.role === "Admin") {
+    return <AdminDashboard />;
   }
 
   if (!locationCode) {
@@ -84,10 +89,11 @@ function Dashboard() {
             {locationCode} · {user!.role}
           </p>
         </div>
-        <div>
-          <label style={{ marginRight: "1rem" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
+          <label>
             Month: <input type="month" value={monthYear} onChange={(e) => setMonthYear(e.target.value)} />
           </label>
+          <HelpdeskWidget />
           <button onClick={logout}>Log out</button>
         </div>
       </header>
