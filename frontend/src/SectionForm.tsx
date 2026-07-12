@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { api } from "./api";
 import type { FieldDef } from "./api";
 import { buildFieldHelp } from "./fieldHelp";
+import { computeDeadline } from "./deadline";
 
 function isFieldVisible(field: FieldDef, values: Record<string, string>): boolean {
   if (!field.showWhen) return true;
@@ -23,12 +24,14 @@ function groupBySub(fields: FieldDef[]): { sub: string; fields: FieldDef[] }[] {
 
 export function SectionForm({
   locationCode,
+  locationName,
   monthYear,
   sectionNo,
   disabled,
   onSaved,
 }: {
   locationCode: string;
+  locationName?: string | null;
   monthYear: string;
   sectionNo: number;
   disabled: boolean;
@@ -79,20 +82,45 @@ export function SectionForm({
   if (error) return <p style={{ color: "crimson" }}>{error}</p>;
   if (!fields) return null;
 
+  const monthLabel = computeDeadline(monthYear).monthLabel;
+
   return (
     <div>
-      <h2 style={{ marginBottom: 0, color: "var(--navy-deep)" }}>{sectionName}</h2>
-      <p style={{ marginTop: "0.25rem" }}>
-        <span className={`status-pill ${sectionComplete ? "submitted" : "not-started"}`}>
-          {sectionComplete ? "Section complete" : "Section incomplete"}
-        </span>
-      </p>
-      {disabled && <p style={{ color: "#92400e" }}>This section is read-only right now.</p>}
+      <div className="dash-card" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1rem" }}>
+        <div>
+          <div style={{ fontWeight: 700, color: "var(--navy-deep)" }}>📋 {sectionName}</div>
+          <div style={{ fontSize: "0.85rem", color: "var(--text-muted)" }}>
+            Period: <strong>{monthLabel}</strong> &nbsp;&middot;&nbsp; Location: <strong>{locationName ?? locationCode}</strong>
+            {disabled && (
+              <>
+                {" "}
+                &nbsp;&middot;&nbsp; 🔒 <em>Read-only (locked)</em>
+              </>
+            )}
+          </div>
+        </div>
+        {disabled ? (
+          <span className="status-pill submitted">✓ Locked</span>
+        ) : (
+          <span className={`status-pill ${sectionComplete ? "submitted" : "not-started"}`}>
+            {sectionComplete ? "Section complete" : "Section incomplete"}
+          </span>
+        )}
+      </div>
 
       {groupBySub(fields).map((group) => (
-        <fieldset key={group.sub} className="sec-card" style={{ border: "none" }}>
-          <legend style={{ padding: "0 0.4rem", fontWeight: 600, color: "var(--navy)" }}>{group.sub}</legend>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.75rem", padding: "0.25rem" }}>
+        <div key={group.sub} className="sec-card" style={{ padding: 0, overflow: "hidden" }}>
+          <div
+            style={{
+              background: "linear-gradient(135deg, var(--navy-deepest) 0%, var(--navy) 100%)",
+              color: "white",
+              padding: "0.5rem 0.9rem",
+              fontWeight: 700,
+            }}
+          >
+            📌 {group.sub}
+          </div>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.75rem", padding: "0.85rem" }}>
             {group.fields
               .filter((field) => isFieldVisible(field, values))
               .map((field) => (
@@ -105,7 +133,7 @@ export function SectionForm({
                 />
               ))}
           </div>
-        </fieldset>
+        </div>
       ))}
 
       {!disabled && (

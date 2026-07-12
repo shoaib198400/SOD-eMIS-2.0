@@ -1,10 +1,8 @@
-import { SECTION_NAMES } from "./sectionNames";
+import { SECTION_NAMES_SHORT } from "./sectionNames";
 
 export type NavSelection = "DASHBOARD" | number | "MI";
 
 export function SectionNav({
-  sectionsComplete,
-  miComplete,
   selected,
   onSelect,
 }: {
@@ -16,7 +14,7 @@ export function SectionNav({
   return (
     <nav style={{ display: "flex", flexDirection: "column", gap: "0.3rem" }}>
       <button onClick={() => onSelect("DASHBOARD")} className={`nav-btn${selected === "DASHBOARD" ? " active" : ""}`}>
-        🏠 Dashboard
+        🏠 {selected === "DASHBOARD" ? "Dashboard" : "Back to Dashboard"}
       </button>
 
       <div
@@ -31,13 +29,12 @@ export function SectionNav({
         MIS Sections
       </div>
 
-      {Object.entries(SECTION_NAMES).map(([num, name]) => {
+      {Object.entries(SECTION_NAMES_SHORT).map(([num, name]) => {
         const sectionNo = Number(num);
-        const complete = sectionsComplete[sectionNo];
         return (
           <div key={sectionNo}>
             <button onClick={() => onSelect(sectionNo)} className={`nav-btn${selected === sectionNo ? " active" : ""}`}>
-              {complete ? "✅" : "⬜"} {name}
+              ▶ {name}
             </button>
             {sectionNo === 5 && (
               <button
@@ -45,7 +42,7 @@ export function SectionNav({
                 className={`nav-btn${selected === "MI" ? " active" : ""}`}
                 style={{ marginLeft: "1rem", width: "calc(100% - 1rem)", fontSize: "0.8rem" }}
               >
-                {miComplete ? "✅" : "⬜"} S5A — M&amp;I MIS
+                ↳ S5A - M&amp;I MIS
               </button>
             )}
           </div>

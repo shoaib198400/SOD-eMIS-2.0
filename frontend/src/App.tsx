@@ -148,6 +148,7 @@ function Dashboard() {
               <>
                 <SectionForm
                   locationCode={locationCode}
+                  locationName={user!.locationName}
                   monthYear={monthYear}
                   sectionNo={selection}
                   disabled={disabled}
