@@ -18,6 +18,20 @@
   --red-light: #ef5350;
   --red-light-dark: #d32f2f;
 
+  /* Chart palette (validated categorical set — see dataviz skill) */
+  --chart-series-1: #2a78d6;
+  --chart-series-2: #1baf7a;
+  --chart-grid: #e1e0d9;
+  --chart-muted: #898781;
+  --chart-good: #0ca30c;
+  --chart-warning: #fab219;
+  --chart-serious: #ec835a;
+  --chart-critical: #d03b3b;
+  --chart-ordinal-1: #86b6ef;
+  --chart-ordinal-2: #3987e5;
+  --chart-ordinal-3: #256abf;
+  --chart-ordinal-4: #184f95;
+
   --blue-secondary: #1565c0;
   --blue-secondary-hover: #1976d2;
 

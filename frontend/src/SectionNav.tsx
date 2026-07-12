@@ -1,6 +1,6 @@
 import { SECTION_NAMES_SHORT } from "./sectionNames";
 
-export type NavSelection = "DASHBOARD" | number | "MI";
+export type NavSelection = "DASHBOARD" | number | "MI" | "ANALYTICS";
 
 export function SectionNav({
   selected,
@@ -15,6 +15,9 @@ export function SectionNav({
     <nav style={{ display: "flex", flexDirection: "column", gap: "0.3rem" }}>
       <button onClick={() => onSelect("DASHBOARD")} className={`nav-btn${selected === "DASHBOARD" ? " active" : ""}`}>
         🏠 {selected === "DASHBOARD" ? "Dashboard" : "Back to Dashboard"}
+      </button>
+      <button onClick={() => onSelect("ANALYTICS")} className={`nav-btn${selected === "ANALYTICS" ? " active" : ""}`}>
+        📊 Analytics
       </button>
 
       <div

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, Suspense, lazy } from "react";
 import { AuthProvider, useAuth } from "./AuthContext";
 import { LoginPage } from "./LoginPage";
 import { SectionForm } from "./SectionForm";
@@ -8,6 +8,7 @@ import { DashboardHome } from "./DashboardHome";
 import { WorkflowBar } from "./WorkflowBar";
 import { DetailTableEditor } from "./DetailTableEditor";
 import { MiPage } from "./MiPage";
+const AnalyticsPage = lazy(() => import("./AnalyticsPage").then((m) => ({ default: m.AnalyticsPage })));
 import { ZoneDashboard } from "./ZoneDashboard";
 import { AdminDashboard } from "./AdminDashboard";
 import { HelpdeskWidget } from "./HelpdeskWidget";
@@ -175,7 +176,11 @@ function Dashboard() {
           summary && <DashboardHome user={user!} monthYear={monthYear} summary={summary} miAllComplete={miAllComplete} onNavigate={setSelection} />
         ) : (
           <div className="dash-card">
-            {selection === "MI" ? (
+            {selection === "ANALYTICS" ? (
+              <Suspense fallback={<p>Loading analytics...</p>}>
+                <AnalyticsPage />
+              </Suspense>
+            ) : selection === "MI" ? (
               <MiPage locationCode={locationCode} monthYear={monthYear} disabled={disabled} onAnySaved={refreshAll} />
             ) : (
               <>

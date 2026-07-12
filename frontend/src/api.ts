@@ -301,4 +301,15 @@ export const api = {
       method: "POST",
       body: JSON.stringify({ rows }),
     }),
+  getAnalyticsFieldData: (fyStartYear: number, fields: string[]) =>
+    request<{ months: string[]; rows: { locationCode: string; locationName: string; zoneName: string | null; monthYear: string; values: Record<string, string> }[] }>(
+      `/api/analytics/field-data?fyStartYear=${fyStartYear}&fields=${fields.join(",")}`
+    ),
+  getAnalyticsCompliance: (fyStartYear: number) =>
+    request<{
+      months: string[];
+      heatmap: { locationCode: string; locationName: string; monthYear: string; status: string }[];
+      monthlyCompliance: { monthYear: string; totalLocations: number; submittedCount: number; pct: number }[];
+      leaderboard: { locationCode: string; locationName: string; submittedCount: number; totalMonths: number; pct: number }[];
+    }>(`/api/analytics/compliance?fyStartYear=${fyStartYear}`),
 };

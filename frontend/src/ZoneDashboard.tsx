@@ -1,10 +1,11 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, Suspense, lazy } from "react";
 import { useAuth } from "./AuthContext";
 import { api } from "./api";
 import type { ZoneLocation, RevisionRequest, SubmissionResponse, MiStatusResponse } from "./api";
 import { SECTION_NAMES_SHORT } from "./sectionNames";
 import titleBanner from "./assets/brand/title_banner.png";
 import sideLogo from "./assets/brand/side_logo.png";
+const AnalyticsPage = lazy(() => import("./AnalyticsPage").then((m) => ({ default: m.AnalyticsPage })));
 
 function currentMonthKey(): string {
   const now = new Date();
@@ -125,11 +126,15 @@ export function ZoneDashboard() {
 
         {error && <p style={{ color: "var(--red)" }}>{error}</p>}
 
-        {page !== "locations" ? (
+        {page === "analytics" ? (
           <div className="dash-card">
-            <p style={{ color: "var(--text-muted)" }}>
-              {page === "analytics" ? "Zone analytics dashboard" : "MIS reports"} — coming in a later phase.
-            </p>
+            <Suspense fallback={<p>Loading analytics...</p>}>
+              <AnalyticsPage />
+            </Suspense>
+          </div>
+        ) : page === "reports" ? (
+          <div className="dash-card">
+            <p style={{ color: "var(--text-muted)" }}>MIS reports — coming in a later phase.</p>
           </div>
         ) : (
           <>

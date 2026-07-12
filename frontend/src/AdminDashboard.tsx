@@ -1,9 +1,10 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, Suspense, lazy } from "react";
 import { useAuth } from "./AuthContext";
 import { api } from "./api";
 import type { ZoneLocation, RevisionRequest, AdminLocation, Zone, HelpdeskTicket, AuditLogEntry } from "./api";
 import titleBanner from "./assets/brand/title_banner.png";
 import sideLogo from "./assets/brand/side_logo.png";
+const AnalyticsPage = lazy(() => import("./AnalyticsPage").then((m) => ({ default: m.AnalyticsPage })));
 
 function currentMonthKey(): string {
   const now = new Date();
@@ -21,7 +22,7 @@ const STATUS_PILL_CLASS: Record<string, string> = {
   REJECTED: "rejected",
 };
 
-type Tab = "overview" | "locations" | "helpdesk" | "audit" | "traffic";
+type Tab = "overview" | "locations" | "helpdesk" | "audit" | "traffic" | "analytics";
 type AdminTool = "setup-zone" | "audit-accounts" | "sync-tank-master" | "sync-locations" | "reset-data" | null;
 
 export function AdminDashboard() {
@@ -80,7 +81,7 @@ export function AdminDashboard() {
         )}
 
         <div style={{ display: "flex", gap: "0.5rem", marginBottom: "1rem" }}>
-          {(["overview", "locations", "helpdesk", "audit", "traffic"] as Tab[]).map((t) => (
+          {(["overview", "locations", "analytics", "helpdesk", "audit", "traffic"] as Tab[]).map((t) => (
             <button
               key={t}
               onClick={() => setTab(t)}
@@ -95,6 +96,11 @@ export function AdminDashboard() {
         <div className="dash-card">
           {tab === "overview" && <OverviewTab />}
           {tab === "locations" && <LocationsTab />}
+          {tab === "analytics" && (
+            <Suspense fallback={<p>Loading analytics...</p>}>
+              <AnalyticsPage />
+            </Suspense>
+          )}
           {tab === "helpdesk" && <HelpdeskTab />}
           {tab === "audit" && <AuditTab />}
           {tab === "traffic" && <TrafficTab />}

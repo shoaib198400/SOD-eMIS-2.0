@@ -9,6 +9,7 @@ import { miRouter } from "./routes/mi";
 import { zoneRouter } from "./routes/zone";
 import { adminRouter } from "./routes/admin";
 import { helpdeskRouter } from "./routes/helpdesk";
+import { analyticsRouter } from "./routes/analytics";
 import { REFRESHED_TOKEN_HEADER } from "./auth";
 
 const app = express();
@@ -38,6 +39,7 @@ app.use("/api/mi", miRouter);
 app.use("/api/zone", zoneRouter);
 app.use("/api/admin", adminRouter);
 app.use("/api/helpdesk", helpdeskRouter);
+app.use("/api/analytics", analyticsRouter);
 
 app.listen(PORT, () => {
   console.log(`Backend listening on port ${PORT}`);
