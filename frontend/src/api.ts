@@ -81,6 +81,38 @@ export interface DetailRow {
   [key: string]: string | number | undefined;
 }
 
+export interface MiFieldDef {
+  key: string;
+  label: string;
+  type: "text" | "int" | "float" | "date" | "select" | "textarea";
+  required: boolean;
+  opts?: string[];
+  maxChars?: number;
+  showWhen?: Record<string, string>;
+}
+
+export interface MiTabStatus {
+  key: string;
+  label: string;
+  isMultiRow: boolean;
+  complete: boolean;
+}
+
+export interface MiStatusResponse {
+  tabs: MiTabStatus[];
+  allComplete: boolean;
+  tankOpts: string[];
+}
+
+export interface MiTabResponse {
+  label: string;
+  isMultiRow: boolean;
+  naLabel: string;
+  fields: MiFieldDef[];
+  isNotApplicable: boolean;
+  rows: Record<string, string>[];
+}
+
 export interface MeResponse {
   userId: number;
   loginCode: string;
@@ -139,5 +171,14 @@ export const api = {
     request<{ rows: DetailRow[] }>(`/api/submissions/${locationCode}/${monthYear}/detail-tables/${tableType}`, {
       method: "PUT",
       body: JSON.stringify({ rows }),
+    }),
+  getMiStatus: (locationCode: string, monthYear: string) =>
+    request<MiStatusResponse>(`/api/mi/${locationCode}/${monthYear}/status`),
+  getMiTab: (locationCode: string, monthYear: string, tabKey: string) =>
+    request<MiTabResponse>(`/api/mi/${locationCode}/${monthYear}/${tabKey}`),
+  saveMiTab: (locationCode: string, monthYear: string, tabKey: string, isNotApplicable: boolean, rows: Record<string, string>[]) =>
+    request<{ ok: boolean }>(`/api/mi/${locationCode}/${monthYear}/${tabKey}`, {
+      method: "PUT",
+      body: JSON.stringify({ isNotApplicable, rows }),
     }),
 };

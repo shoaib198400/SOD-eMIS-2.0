@@ -3,8 +3,10 @@ import { AuthProvider, useAuth } from "./AuthContext";
 import { LoginPage } from "./LoginPage";
 import { SectionForm } from "./SectionForm";
 import { SectionNav } from "./SectionNav";
+import type { NavSelection } from "./SectionNav";
 import { WorkflowBar } from "./WorkflowBar";
 import { DetailTableEditor } from "./DetailTableEditor";
+import { MiPage } from "./MiPage";
 import { api } from "./api";
 import type { SubmissionResponse } from "./api";
 
@@ -16,24 +18,29 @@ function currentMonthKey(): string {
 function Dashboard() {
   const { user, logout } = useAuth();
   const [monthYear, setMonthYear] = useState(currentMonthKey());
-  const [sectionNo, setSectionNo] = useState(1);
+  const [selection, setSelection] = useState<NavSelection>(1);
   const [summary, setSummary] = useState<SubmissionResponse | null>(null);
+  const [miAllComplete, setMiAllComplete] = useState(false);
   const [actionBusy, setActionBusy] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
 
   const locationCode = user?.locationCode ?? null;
 
-  const refreshSummary = useCallback(() => {
+  const refreshAll = useCallback(() => {
     if (!locationCode) return;
     api
       .getSubmission(locationCode, monthYear)
       .then(setSummary)
       .catch((e) => setActionError((e as Error).message));
+    api
+      .getMiStatus(locationCode, monthYear)
+      .then((res) => setMiAllComplete(res.allComplete))
+      .catch(() => undefined);
   }, [locationCode, monthYear]);
 
   useEffect(() => {
-    refreshSummary();
-  }, [refreshSummary]);
+    refreshAll();
+  }, [refreshAll]);
 
   if (!locationCode) {
     return (
@@ -55,7 +62,7 @@ function Dashboard() {
     setActionError(null);
     try {
       await action();
-      refreshSummary();
+      refreshAll();
     } catch (e) {
       setActionError((e as Error).message);
     } finally {
@@ -96,22 +103,33 @@ function Dashboard() {
       )}
 
       <div style={{ display: "flex", gap: "1.5rem", alignItems: "flex-start" }}>
-        <SectionNav sectionsComplete={summary?.sectionsComplete ?? {}} selected={sectionNo} onSelect={setSectionNo} />
+        <SectionNav
+          sectionsComplete={summary?.sectionsComplete ?? {}}
+          miComplete={miAllComplete}
+          selected={selection}
+          onSelect={setSelection}
+        />
         <div style={{ flex: 1, minWidth: 0 }}>
-          <SectionForm
-            locationCode={locationCode}
-            monthYear={monthYear}
-            sectionNo={sectionNo}
-            disabled={disabled}
-            onSaved={refreshSummary}
-          />
-          {sectionNo === 3 && (
-            <DetailTableEditor locationCode={locationCode} monthYear={monthYear} tableType="RAILWAY_CLAIM" disabled={disabled} />
-          )}
-          {sectionNo === 10 && (
+          {selection === "MI" ? (
+            <MiPage locationCode={locationCode} monthYear={monthYear} disabled={disabled} onAnySaved={refreshAll} />
+          ) : (
             <>
-              <DetailTableEditor locationCode={locationCode} monthYear={monthYear} tableType="IRR_DETAIL" disabled={disabled} />
-              <DetailTableEditor locationCode={locationCode} monthYear={monthYear} tableType="LEGAL_CASE" disabled={disabled} />
+              <SectionForm
+                locationCode={locationCode}
+                monthYear={monthYear}
+                sectionNo={selection}
+                disabled={disabled}
+                onSaved={refreshAll}
+              />
+              {selection === 3 && (
+                <DetailTableEditor locationCode={locationCode} monthYear={monthYear} tableType="RAILWAY_CLAIM" disabled={disabled} />
+              )}
+              {selection === 10 && (
+                <>
+                  <DetailTableEditor locationCode={locationCode} monthYear={monthYear} tableType="IRR_DETAIL" disabled={disabled} />
+                  <DetailTableEditor locationCode={locationCode} monthYear={monthYear} tableType="LEGAL_CASE" disabled={disabled} />
+                </>
+              )}
             </>
           )}
         </div>
