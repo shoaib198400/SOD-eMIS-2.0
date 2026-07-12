@@ -1,4 +1,6 @@
-import { FieldDef, SECTION_FIELDS, getExcludedFields } from "./formDefs";
+import { FieldDef, SECTION_FIELDS, getExcludedFields, getSkipSections } from "./formDefs";
+
+const TOTAL_SECTIONS = 10;
 
 export function isFieldVisible(
   field: FieldDef,
@@ -42,4 +44,25 @@ export function isSectionComplete(
   }
 
   return true;
+}
+
+// Overall progress across all 10 sections — sections skipped entirely for this location type
+// (e.g. TOP/HMEL skip Facilities & Planning and M&I) count as auto-complete, matching the
+// original app's "N/A sections are auto-completed, not shown to the user" behavior.
+// completion_pct is simply (# complete sections) * 10, matching the original's formula exactly.
+export function computeOverallCompletion(
+  locType: string,
+  values: Record<string, string | undefined>
+): { completionPct: number; sectionsComplete: Record<number, boolean> } {
+  const skip = getSkipSections(locType);
+  const sectionsComplete: Record<number, boolean> = {};
+  let completeCount = 0;
+
+  for (let s = 1; s <= TOTAL_SECTIONS; s++) {
+    const complete = skip.has(s) || isSectionComplete(s, locType, values);
+    sectionsComplete[s] = complete;
+    if (complete) completeCount++;
+  }
+
+  return { completionPct: completeCount * 10, sectionsComplete };
 }

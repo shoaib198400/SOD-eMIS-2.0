@@ -25,7 +25,17 @@ try {
     [zoneId, passwordHash]
   );
 
-  console.log("Seeded: zone 'Test Zone', location 'TESTLOC1', Maker user 'TESTLOC1' / password 'Test@1234'");
+  const checkerHash = await bcrypt.hash("Test@1234", 10);
+  await pool.query(
+    `insert into users (login_code, location_code, zone_id, role, password_hash, is_first_login)
+     values ('TESTLOC1C', 'TESTLOC1', $1, 'Checker', $2, false)
+     on conflict (login_code) do update set password_hash = excluded.password_hash`,
+    [zoneId, checkerHash]
+  );
+
+  console.log("Seeded: zone 'Test Zone', location 'TESTLOC1'");
+  console.log("  Maker:   TESTLOC1  / Test@1234");
+  console.log("  Checker: TESTLOC1C / Test@1234");
 } catch (e) {
   console.error("Seed failed:", e.message);
   process.exitCode = 1;

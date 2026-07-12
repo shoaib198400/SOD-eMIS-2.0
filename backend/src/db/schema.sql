@@ -58,3 +58,29 @@ create table if not exists field_values (
 
 create index if not exists idx_monthly_submissions_location_month
   on monthly_submissions (location_code, month_year);
+
+-- Phase 2 additions: detail tables (Railway Claims / IRR Details / Legal Cases) and the
+-- frozen-at-approval snapshot of a submission's field values.
+
+create table if not exists detail_rows (
+  id bigserial primary key,
+  submission_id bigint not null references monthly_submissions(id) on delete cascade,
+  table_type text not null check (table_type in ('RAILWAY_CLAIM', 'IRR_DETAIL', 'LEGAL_CASE')),
+  row_data jsonb not null,
+  sort_order int not null default 0,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create index if not exists idx_detail_rows_submission_table
+  on detail_rows (submission_id, table_type);
+
+create table if not exists approved_snapshots (
+  id bigserial primary key,
+  submission_id bigint not null unique references monthly_submissions(id) on delete cascade,
+  location_code text not null references locations(code),
+  month_year date not null,
+  snapshot jsonb not null,
+  approved_by bigint references users(id),
+  approved_at timestamptz not null default now()
+);
