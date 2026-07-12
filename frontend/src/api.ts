@@ -235,6 +235,10 @@ export const api = {
   fieldDefs: (sectionNo: number) => request<FieldDefsResponse>(`/api/field-defs/${sectionNo}`),
   getSubmission: (locationCode: string, monthYear: string) =>
     request<SubmissionResponse>(`/api/submissions/${locationCode}/${monthYear}`),
+  getFyStatus: (locationCode: string, fyStartYear: number) =>
+    request<{ months: { monthYear: string; status: SubmissionStatus }[] }>(
+      `/api/submissions/${locationCode}/fy-status?fyStartYear=${fyStartYear}`
+    ),
   saveSection: (locationCode: string, monthYear: string, sectionNo: number, values: Record<string, string>) =>
     request<SaveSectionResponse>(`/api/submissions/${locationCode}/${monthYear}/sections/${sectionNo}`, {
       method: "PATCH",
@@ -344,7 +348,12 @@ export const api = {
   exportPendingList: (monthYear: string) =>
     downloadFile(`/api/exports/pending-list?monthYear=${monthYear}`, `Pending_MIS_${monthYear}.xlsx`),
   exportTankMaster: () => downloadFile("/api/exports/tank-master", "Tank_Master.xlsx"),
-  exportBlankTemplate: () => downloadFile("/api/exports/blank-template", "MIS_Blank_Template.xlsx"),
+  exportMisTemplate: (locationCode: string, monthYear: string) =>
+    downloadFile(`/api/exports/mis-template/${locationCode}/${monthYear}`, `MIS_${locationCode}_${monthYear}.xlsx`),
+  exportMiReport: (locationCode: string, monthYear: string) =>
+    downloadFile(`/api/exports/mi-report/${locationCode}/${monthYear}`, `MI_MIS_${locationCode}_${monthYear}.xlsx`),
+  exportConsolidatedMi: (monthYear: string) =>
+    downloadFile(`/api/exports/consolidated-mi?monthYear=${monthYear}`, `Consolidated_MI_MIS_${monthYear}.xlsx`),
   exportConsolidatedFy: (fyStartYear: number) =>
     downloadFile(`/api/exports/consolidated-fy?fyStartYear=${fyStartYear}`, `Full_MIS_FY${fyStartYear}.xlsx`),
 };

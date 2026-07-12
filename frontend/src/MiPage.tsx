@@ -66,11 +66,21 @@ export function MiPage({
         before this month can be submitted for review.
       </div>
 
-      <p style={{ color: "var(--text-muted)" }}>
-        <span className={`status-pill ${status.allComplete ? "submitted" : "not-started"}`}>
-          {status.allComplete ? "All 10 M&I tabs complete" : "Not all M&I tabs complete"}
-        </span>{" "}
-        every tab must be either filled in or marked Not Applicable before this month can be submitted for review.
+      <p style={{ color: "var(--text-muted)", display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "0.5rem" }}>
+        <span>
+          <span className={`status-pill ${status.allComplete ? "submitted" : "not-started"}`}>
+            {status.allComplete ? "All 10 M&I tabs complete" : "Not all M&I tabs complete"}
+          </span>{" "}
+          every tab must be either filled in or marked Not Applicable before this month can be submitted for review.
+        </span>
+        <button
+          onClick={() => api.exportMiReport(locationCode, monthYear)}
+          disabled={!status.allComplete}
+          className="btn btn-save"
+          style={{ fontSize: "0.85rem" }}
+        >
+          📊 Generate M&amp;I Report
+        </button>
       </p>
 
       <div style={{ display: "flex", flexWrap: "wrap", gap: "0.4rem", marginBottom: "1rem" }}>

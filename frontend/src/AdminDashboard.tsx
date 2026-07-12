@@ -24,14 +24,19 @@ const STATUS_PILL_CLASS: Record<string, string> = {
   REJECTED: "rejected",
 };
 
-type Tab = "overview" | "locations" | "helpdesk" | "audit" | "traffic" | "analytics";
-type AdminTool = "setup-zone" | "audit-accounts" | "sync-tank-master" | "sync-locations" | "reset-data" | "data-exports" | null;
+type Tab = "overview" | "locations" | "helpdesk" | "audit" | "traffic" | "analytics" | "reports";
+type AdminTool = "setup-zone" | "audit-accounts" | "sync-tank-master" | "sync-locations" | "reset-data" | null;
 
 export function AdminDashboard() {
   const { user, logout } = useAuth();
   const [tab, setTab] = useState<Tab>("overview");
   const [tool, setTool] = useState<AdminTool>(null);
   const [monthYear, setMonthYear] = useState(currentMonthKey());
+  const [helpdeskPendingCount, setHelpdeskPendingCount] = useState(0);
+
+  useEffect(() => {
+    api.getAdminHelpdeskTickets().then((r) => setHelpdeskPendingCount(r.tickets.filter((t) => t.status === "OPEN").length)).catch(() => undefined);
+  }, [tab]);
 
   return (
     <div className="app-shell">
@@ -46,22 +51,44 @@ export function AdminDashboard() {
           Admin Tools
         </div>
         <button onClick={() => setTool(tool === "setup-zone" ? null : "setup-zone")} className={`nav-btn${tool === "setup-zone" ? " active" : ""}`}>
-          ⚙️ Setup Zone Accounts
+          ⚙️ Setup Zone &amp; HQO Accounts
         </button>
         <button onClick={() => setTool(tool === "audit-accounts" ? null : "audit-accounts")} className={`nav-btn${tool === "audit-accounts" ? " active" : ""}`}>
-          🔎 Audit Zone &amp; Admin Accounts
-        </button>
-        <button onClick={() => setTool(tool === "sync-tank-master" ? null : "sync-tank-master")} className={`nav-btn${tool === "sync-tank-master" ? " active" : ""}`}>
-          📥 Upload Tank Master
+          🔍 Audit Zone &amp; HQO Accounts
         </button>
         <button onClick={() => setTool(tool === "sync-locations" ? null : "sync-locations")} className={`nav-btn${tool === "sync-locations" ? " active" : ""}`}>
           ➕ Sync Missing Location Accounts
         </button>
         <button onClick={() => setTool(tool === "reset-data" ? null : "reset-data")} className={`nav-btn${tool === "reset-data" ? " active" : ""}`}>
-          🗑 Reset Location Data
+          🗑️ Reset Location Data
         </button>
-        <button onClick={() => setTool(tool === "data-exports" ? null : "data-exports")} className={`nav-btn${tool === "data-exports" ? " active" : ""}`}>
-          ⬇ Data Exports
+        <button onClick={() => setTool(tool === "sync-tank-master" ? null : "sync-tank-master")} className={`nav-btn${tool === "sync-tank-master" ? " active" : ""}`}>
+          📥 Upload Tank Master
+        </button>
+
+        <div style={{ fontSize: "0.7rem", textTransform: "uppercase", letterSpacing: "0.6px", color: "rgba(255,255,255,0.6)", margin: "0.8rem 0 0.2rem 0.3rem" }}>
+          Navigate
+        </div>
+        <button onClick={() => setTab("overview")} className={`nav-btn${tab === "overview" ? " active" : ""}`}>
+          🏠 Dashboard
+        </button>
+        <button onClick={() => setTab("locations")} className={`nav-btn${tab === "locations" ? " active" : ""}`}>
+          🏭 Location Management
+        </button>
+        <button onClick={() => setTab("traffic")} className={`nav-btn${tab === "traffic" ? " active" : ""}`}>
+          📊 Portal Traffic
+        </button>
+        <button onClick={() => setTab("analytics")} className={`nav-btn${tab === "analytics" ? " active" : ""}`}>
+          📈 Analytics
+        </button>
+        <button onClick={() => setTab("reports")} className={`nav-btn${tab === "reports" ? " active" : ""}`}>
+          📊 MIS Reports
+        </button>
+        <button onClick={() => setTab("helpdesk")} className={`nav-btn${tab === "helpdesk" ? " active" : ""}`}>
+          🎫 Help Desk{helpdeskPendingCount ? `  (${helpdeskPendingCount} pending)` : ""}
+        </button>
+        <button onClick={() => setTab("audit")} className={`nav-btn${tab === "audit" ? " active" : ""}`}>
+          📜 Audit Log
         </button>
       </aside>
 
@@ -90,19 +117,6 @@ export function AdminDashboard() {
           </div>
         )}
 
-        <div style={{ display: "flex", gap: "0.5rem", marginBottom: "1rem" }}>
-          {(["overview", "locations", "analytics", "helpdesk", "audit", "traffic"] as Tab[]).map((t) => (
-            <button
-              key={t}
-              onClick={() => setTab(t)}
-              className="btn btn-secondary"
-              style={{ opacity: tab === t ? 1 : 0.55, boxShadow: "none" }}
-            >
-              {t[0].toUpperCase() + t.slice(1)}
-            </button>
-          ))}
-        </div>
-
         <div className="dash-card">
           {tab === "overview" && <OverviewTab monthYear={monthYear} />}
           {tab === "locations" && <LocationsTab />}
@@ -111,6 +125,7 @@ export function AdminDashboard() {
               <AnalyticsPage />
             </Suspense>
           )}
+          {tab === "reports" && <ReportsTab />}
           {tab === "helpdesk" && <HelpdeskTab />}
           {tab === "audit" && <AuditTab />}
           {tab === "traffic" && <TrafficTab />}
@@ -127,9 +142,6 @@ function AdminToolPanel({ tool, onClose }: { tool: Exclude<AdminTool, null>; onC
   const [codes, setCodes] = useState("");
   const [csvText, setCsvText] = useState("");
   const [accounts, setAccounts] = useState<{ id: number; login_code: string; role: string; zone_name: string | null; active: boolean }[]>([]);
-  const [exportMonthYear, setExportMonthYear] = useState(currentMonthKey());
-  const [exportFyStartYear, setExportFyStartYear] = useState(new Date().getMonth() >= 3 ? new Date().getFullYear() : new Date().getFullYear() - 1);
-  const [exportBusy, setExportBusy] = useState<string | null>(null);
 
   useEffect(() => {
     if (tool === "audit-accounts") {
@@ -197,28 +209,15 @@ function AdminToolPanel({ tool, onClose }: { tool: Exclude<AdminTool, null>; onC
     }
   }
 
-  async function runExport(key: string, action: () => Promise<void>) {
-    setExportBusy(key);
-    setError(null);
-    try {
-      await action();
-    } catch (e) {
-      setError((e as Error).message);
-    } finally {
-      setExportBusy(null);
-    }
-  }
-
   return (
     <div>
       <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "0.5rem" }}>
         <strong style={{ color: "var(--navy-deep)" }}>
-          {tool === "setup-zone" && "Setup Zone Accounts"}
-          {tool === "audit-accounts" && "Audit Zone & Admin Accounts"}
+          {tool === "setup-zone" && "Setup Zone & HQO Accounts"}
+          {tool === "audit-accounts" && "Audit Zone & HQO Accounts"}
           {tool === "sync-tank-master" && "Upload Tank Master"}
           {tool === "sync-locations" && "Sync Missing Location Accounts"}
           {tool === "reset-data" && "Reset Location Data"}
-          {tool === "data-exports" && "Data Exports"}
         </strong>
         <button onClick={onClose} className="btn btn-secondary" style={{ padding: "0.2rem 0.6rem", fontSize: "0.8rem" }}>
           Close
@@ -296,50 +295,79 @@ function AdminToolPanel({ tool, onClose }: { tool: Exclude<AdminTool, null>; onC
         </>
       )}
 
-      {tool === "data-exports" && (
-        <>
-          <div style={{ display: "flex", gap: "1.5rem", flexWrap: "wrap", marginBottom: "0.75rem" }}>
-            <label>
-              Month: <input type="month" value={exportMonthYear} onChange={(e) => setExportMonthYear(e.target.value)} />
-            </label>
-            <label>
-              FY Start Year:{" "}
-              <input
-                type="number"
-                value={exportFyStartYear}
-                onChange={(e) => setExportFyStartYear(Number(e.target.value))}
-                style={{ width: "6rem" }}
-              />
-            </label>
-          </div>
-          <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
-            <button
-              onClick={() => runExport("submitted", () => api.exportSubmittedData(exportMonthYear))}
-              disabled={exportBusy !== null}
-              className="btn btn-save"
-            >
-              {exportBusy === "submitted" ? "Preparing..." : "⬇ Submitted Data (.xlsx)"}
-            </button>
-            <button
-              onClick={() => runExport("pending", () => api.exportPendingList(exportMonthYear))}
-              disabled={exportBusy !== null}
-              className="btn btn-save"
-            >
-              {exportBusy === "pending" ? "Preparing..." : "⬇ Pending Locations (.xlsx)"}
-            </button>
-            <button onClick={() => runExport("tank", () => api.exportTankMaster())} disabled={exportBusy !== null} className="btn btn-save">
-              {exportBusy === "tank" ? "Preparing..." : "⬇ Tank Master (.xlsx)"}
-            </button>
-            <button
-              onClick={() => runExport("fy", () => api.exportConsolidatedFy(exportFyStartYear))}
-              disabled={exportBusy !== null}
-              className="btn btn-save"
-            >
-              {exportBusy === "fy" ? "Preparing..." : `⬇ Full FY${exportFyStartYear}-${String(exportFyStartYear + 1).slice(2)} Data (.xlsx)`}
-            </button>
-          </div>
-        </>
-      )}
+    </div>
+  );
+}
+
+function ReportsTab() {
+  const [exportMonthYear, setExportMonthYear] = useState(currentMonthKey());
+  const [exportFyStartYear, setExportFyStartYear] = useState(new Date().getMonth() >= 3 ? new Date().getFullYear() : new Date().getFullYear() - 1);
+  const [exportBusy, setExportBusy] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  async function runExport(key: string, action: () => Promise<void>) {
+    setExportBusy(key);
+    setError(null);
+    try {
+      await action();
+    } catch (e) {
+      setError((e as Error).message);
+    } finally {
+      setExportBusy(null);
+    }
+  }
+
+  return (
+    <div>
+      <h3 style={{ color: "var(--navy-deep)", marginTop: 0 }}>📊 MIS Reports</h3>
+      {error && <p style={{ color: "var(--red)" }}>{error}</p>}
+      <div style={{ display: "flex", gap: "1.5rem", flexWrap: "wrap", marginBottom: "0.75rem" }}>
+        <label>
+          Month: <input type="month" value={exportMonthYear} onChange={(e) => setExportMonthYear(e.target.value)} />
+        </label>
+        <label>
+          FY Start Year:{" "}
+          <input
+            type="number"
+            value={exportFyStartYear}
+            onChange={(e) => setExportFyStartYear(Number(e.target.value))}
+            style={{ width: "6rem" }}
+          />
+        </label>
+      </div>
+      <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
+        <button
+          onClick={() => runExport("submitted", () => api.exportSubmittedData(exportMonthYear))}
+          disabled={exportBusy !== null}
+          className="btn btn-save"
+        >
+          {exportBusy === "submitted" ? "Preparing..." : "⬇ Submitted Data (.xlsx)"}
+        </button>
+        <button
+          onClick={() => runExport("pending", () => api.exportPendingList(exportMonthYear))}
+          disabled={exportBusy !== null}
+          className="btn btn-save"
+        >
+          {exportBusy === "pending" ? "Preparing..." : "⬇ Pending Locations (.xlsx)"}
+        </button>
+        <button onClick={() => runExport("tank", () => api.exportTankMaster())} disabled={exportBusy !== null} className="btn btn-save">
+          {exportBusy === "tank" ? "Preparing..." : "⬇ Tank Master (.xlsx)"}
+        </button>
+        <button
+          onClick={() => runExport("mi", () => api.exportConsolidatedMi(exportMonthYear))}
+          disabled={exportBusy !== null}
+          className="btn btn-save"
+        >
+          {exportBusy === "mi" ? "Preparing..." : "⬇ Consolidated M&I MIS (.xlsx)"}
+        </button>
+        <button
+          onClick={() => runExport("fy", () => api.exportConsolidatedFy(exportFyStartYear))}
+          disabled={exportBusy !== null}
+          className="btn btn-save"
+        >
+          {exportBusy === "fy" ? "Preparing..." : `⬇ Consolidated MIS + M&I — Full FY${exportFyStartYear}-${String(exportFyStartYear + 1).slice(2)} (.xlsx)`}
+        </button>
+      </div>
     </div>
   );
 }

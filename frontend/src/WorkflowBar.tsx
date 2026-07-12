@@ -17,10 +17,32 @@ const STATUS_PILL_CLASS: Record<SubmissionStatus, string> = {
   REJECTED: "rejected",
 };
 
-export function WorkflowBar({
+// Status pill + checker notes — shown near the top of the dashboard, next to the KPI strip.
+export function WorkflowNotice({
   status,
   completionPct,
   checkerNotes,
+}: {
+  status: SubmissionStatus;
+  completionPct: number;
+  checkerNotes: string | null;
+}) {
+  return (
+    <div>
+      <p style={{ margin: 0 }}>
+        <span className={`status-pill ${STATUS_PILL_CLASS[status]}`}>{STATUS_LABELS[status]}</span>{" "}
+        <span style={{ color: "var(--text-muted)", fontSize: "0.9rem" }}>Overall completion: {completionPct}%</span>
+      </p>
+      {checkerNotes && <p style={{ margin: "0.5rem 0 0", color: "#92400e" }}>Checker notes: {checkerNotes}</p>}
+    </div>
+  );
+}
+
+// Submit/Approve/Reject/Reset buttons — rendered at the bottom of the dashboard, right after
+// the section-completion checklist, matching the original app's page order.
+export function WorkflowActions({
+  status,
+  completionPct,
   role,
   busy,
   error,
@@ -31,7 +53,6 @@ export function WorkflowBar({
 }: {
   status: SubmissionStatus;
   completionPct: number;
-  checkerNotes: string | null;
   role: string;
   busy: boolean;
   error: string | null;
@@ -50,19 +71,19 @@ export function WorkflowBar({
   const canMakerReset = role === "Maker" && !["SUBMITTED", "PENDING_REVIEW"].includes(status);
   const canCheckerReset = role === "Checker" && status !== "SUBMITTED";
 
+  if (!canSubmit && !canApproveReject && !canMakerReset && !canCheckerReset) return null;
+
   return (
-    <div>
-      <p style={{ margin: 0 }}>
-        <span className={`status-pill ${STATUS_PILL_CLASS[status]}`}>{STATUS_LABELS[status]}</span>{" "}
-        <span style={{ color: "var(--text-muted)", fontSize: "0.9rem" }}>Overall completion: {completionPct}%</span>
-      </p>
-      {checkerNotes && <p style={{ margin: "0.5rem 0 0", color: "#92400e" }}>Checker notes: {checkerNotes}</p>}
+    <div style={{ marginTop: "1rem", paddingTop: "1rem", borderTop: "1px solid #e5e7eb" }}>
+      <div style={{ fontSize: "0.8rem", fontWeight: 600, color: "var(--text-muted)", textTransform: "uppercase", marginBottom: "0.5rem" }}>
+        Actions
+      </div>
       {error && <p style={{ color: "var(--red)" }}>{error}</p>}
 
-      <div style={{ display: "flex", gap: "0.5rem", marginTop: "0.75rem", flexWrap: "wrap" }}>
+      <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
         {canSubmit && (
           <button onClick={onSubmit} disabled={busy || completionPct < 100} className="btn btn-primary">
-            Submit for Review
+            📤 Submit for Review
           </button>
         )}
         {canApproveReject && (

@@ -1,5 +1,7 @@
+import type { ReactNode } from "react";
 import { SECTION_NAMES, SECTION_NAMES_SHORT } from "./sectionNames";
 import { computeDeadline } from "./deadline";
+import type { Urgency } from "./deadline";
 import { api } from "./api";
 import type { SubmissionResponse, MeResponse } from "./api";
 import type { NavSelection } from "./SectionNav";
@@ -12,40 +14,48 @@ const STATUS_LABELS: Record<string, string> = {
   REJECTED: "Needs Revision",
 };
 
+// Mirrors the original app's compute_deadline() banner exactly — shown in ALL 4 states,
+// not just when overdue.
+const BANNER_CONFIG: Record<Urgency, { gradient: string; icon: string; title: string }> = {
+  overdue: { gradient: "linear-gradient(135deg, #b71c1c 0%, #c62828 100%)", icon: "⚠️", title: "OVERDUE" },
+  urgent: { gradient: "linear-gradient(135deg, #ea580c 0%, #c2410c 100%)", icon: "🔴", title: "URGENT" },
+  warning: { gradient: "linear-gradient(135deg, #1565c0 0%, #1976d2 100%)", icon: "⚠️", title: "DUE SOON" },
+  ok: { gradient: "linear-gradient(135deg, #15803d 0%, #166534 100%)", icon: "✅", title: "ON TRACK" },
+};
+
 export function DashboardHome({
   user,
   monthYear,
   summary,
   onNavigate,
+  actions,
 }: {
   user: MeResponse;
   monthYear: string;
   summary: SubmissionResponse;
   onNavigate: (selection: NavSelection) => void;
+  actions?: ReactNode;
 }) {
   const deadline = computeDeadline(monthYear);
   const sectionsDone = Object.values(summary.sectionsComplete).filter(Boolean).length;
   const totalSections = Object.keys(SECTION_NAMES).length;
-  const showOverdueBanner = summary.status !== "SUBMITTED" && (deadline.urgency === "overdue" || deadline.urgency === "urgent");
   const locked = summary.status === "SUBMITTED" || summary.status === "PENDING_REVIEW";
+  const banner = BANNER_CONFIG[deadline.urgency];
+  const pillLabel = deadline.daysLeft < 0 ? `${Math.abs(deadline.daysLeft)}d overdue` : `${deadline.daysLeft}d left`;
 
   return (
     <div>
-      {showOverdueBanner && (
-        <div className="overdue-banner">
-          <span>
-            ⚠️ {deadline.urgency === "overdue" ? "OVERDUE" : "URGENT"} — MIS for {deadline.monthLabel} was due on{" "}
-            {deadline.dateLabel}
-            {deadline.daysLeft < 0
-              ? ` (${Math.abs(deadline.daysLeft)} day(s) overdue)`
-              : ` (${deadline.daysLeft} day(s) left)`}
-            . Submit immediately!
-          </span>
-          <span className="badge">
-            {deadline.daysLeft < 0 ? `${Math.abs(deadline.daysLeft)}d overdue` : `${deadline.daysLeft}d left`}
-          </span>
-        </div>
-      )}
+      <div className="overdue-banner" style={{ background: banner.gradient }}>
+        <span>
+          {banner.icon} <strong>{banner.title}</strong> — MIS for <strong>{deadline.monthLabel}</strong>{" "}
+          {deadline.urgency === "overdue"
+            ? `was due on ${deadline.dateLabel} — ${Math.abs(deadline.daysLeft)} day(s) past deadline. Submit immediately!`
+            : deadline.urgency === "urgent"
+            ? `due on ${deadline.dateLabel} — only ${deadline.daysLeft} day(s) left!`
+            : `due on ${deadline.dateLabel}. ${deadline.daysLeft} days remaining.`}
+        </span>
+        <span className="badge">{pillLabel}</span>
+      </div>
 
       <div className="stat-row">
         <div className="stat-card">
@@ -111,6 +121,7 @@ export function DashboardHome({
                 );
               })}
             </div>
+            {actions}
           </div>
         </div>
 
@@ -145,7 +156,11 @@ export function DashboardHome({
             >
               📄 Open MIS Guidelines PDF
             </a>
-            <button onClick={() => api.exportBlankTemplate()} className="btn btn-save" style={{ width: "100%" }}>
+            <button
+              onClick={() => api.exportMisTemplate(user.locationCode ?? "", monthYear)}
+              className="btn btn-save"
+              style={{ width: "100%" }}
+            >
               📊 Excel Template
             </button>
           </div>

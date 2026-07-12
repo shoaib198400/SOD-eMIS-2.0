@@ -58,6 +58,35 @@ async function findSubmission(locationCode: string, monthDate: string) {
   return result.rows[0] ?? null;
 }
 
+// All 12 months' statuses for a location across one FY — feeds the status icons shown next
+// to each option in the Month dropdown (✅ Submitted, 🟡 Pending Review, etc).
+submissionsRouter.get("/:locationCode/fy-status", requireAuth, async (req, res) => {
+  const locationCode = req.params.locationCode as string;
+  const fyStartYear = Number(req.query.fyStartYear);
+  if (!checkOwnership(req, locationCode)) {
+    res.status(403).json({ error: "forbidden" });
+    return;
+  }
+  if (!fyStartYear) {
+    res.status(400).json({ error: "fyStartYear is required" });
+    return;
+  }
+  const months: string[] = [];
+  for (let i = 0; i < 12; i++) {
+    const monthNum = ((i + 3) % 12) + 1;
+    const year = i < 9 ? fyStartYear : fyStartYear + 1;
+    months.push(`${year}-${String(monthNum).padStart(2, "0")}-01`);
+  }
+  const result = await pool.query(
+    "select month_year, status from monthly_submissions where location_code = $1 and month_year = any($2::date[])",
+    [locationCode, months]
+  );
+  const statusByMonth = new Map(result.rows.map((r) => [r.month_year, r.status]));
+  res.json({
+    months: months.map((m) => ({ monthYear: m.slice(0, 7), status: statusByMonth.get(m) ?? "NOT_STARTED" })),
+  });
+});
+
 submissionsRouter.get("/:locationCode/:monthYear", requireAuth, async (req, res) => {
   const locationCode = req.params.locationCode as string;
   const monthYear = req.params.monthYear as string;

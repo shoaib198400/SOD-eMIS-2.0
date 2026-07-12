@@ -5,7 +5,7 @@ import { SectionForm } from "./SectionForm";
 import { SectionNav } from "./SectionNav";
 import type { NavSelection } from "./SectionNav";
 import { DashboardHome } from "./DashboardHome";
-import { WorkflowBar } from "./WorkflowBar";
+import { WorkflowNotice, WorkflowActions } from "./WorkflowBar";
 import { DetailTableEditor } from "./DetailTableEditor";
 import { MiPage } from "./MiPage";
 const AnalyticsPage = lazy(() => import("./AnalyticsPage").then((m) => ({ default: m.AnalyticsPage })));
@@ -13,8 +13,9 @@ import { ZoneDashboard } from "./ZoneDashboard";
 import { AdminDashboard } from "./AdminDashboard";
 import { HelpdeskWidget } from "./HelpdeskWidget";
 import { FyMonthPicker } from "./FyMonthPicker";
+import { fyStartYearOf } from "./fyUtils";
 import { api } from "./api";
-import type { SubmissionResponse } from "./api";
+import type { SubmissionResponse, SubmissionStatus } from "./api";
 import sideLogo from "./assets/brand/side_logo.png";
 import titleBanner from "./assets/brand/title_banner.png";
 
@@ -32,6 +33,7 @@ function Dashboard() {
   const [tankOpts, setTankOpts] = useState<string[]>([]);
   const [actionBusy, setActionBusy] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
+  const [monthStatuses, setMonthStatuses] = useState<Record<string, SubmissionStatus> | undefined>(undefined);
 
   const locationCode = user?.locationCode ?? null;
 
@@ -53,6 +55,14 @@ function Dashboard() {
   useEffect(() => {
     refreshAll();
   }, [refreshAll]);
+
+  useEffect(() => {
+    if (!locationCode) return;
+    api
+      .getFyStatus(locationCode, fyStartYearOf(monthYear))
+      .then((res) => setMonthStatuses(Object.fromEntries(res.months.map((m) => [m.monthYear, m.status]))))
+      .catch(() => undefined);
+  }, [locationCode, monthYear]);
 
   if (user?.role === "Zone") {
     return <ZoneDashboard />;
@@ -149,7 +159,7 @@ function Dashboard() {
         </header>
 
         <div className="filter-row">
-          <FyMonthPicker monthYear={monthYear} onChange={setMonthYear} />
+          <FyMonthPicker monthYear={monthYear} onChange={setMonthYear} monthStatuses={monthStatuses} />
           <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
             <button className="btn-logout" onClick={logout}>
               ↪ Logout
@@ -159,23 +169,32 @@ function Dashboard() {
 
         {summary && (
           <div className="dash-card">
-            <WorkflowBar
-              status={summary.status}
-              completionPct={summary.completionPct}
-              checkerNotes={summary.checkerNotes}
-              role={user!.role}
-              busy={actionBusy}
-              error={actionError}
-              onSubmit={() => runAction(() => api.submit(locationCode, monthYear))}
-              onApprove={() => runAction(() => api.approve(locationCode, monthYear))}
-              onReject={(note) => runAction(() => api.reject(locationCode, monthYear, note))}
-              onReset={(reason) => runAction(() => api.reset(locationCode, monthYear, reason))}
-            />
+            <WorkflowNotice status={summary.status} completionPct={summary.completionPct} checkerNotes={summary.checkerNotes} />
           </div>
         )}
 
         {selection === "DASHBOARD" ? (
-          summary && <DashboardHome user={user!} monthYear={monthYear} summary={summary} onNavigate={setSelection} />
+          summary && (
+            <DashboardHome
+              user={user!}
+              monthYear={monthYear}
+              summary={summary}
+              onNavigate={setSelection}
+              actions={
+                <WorkflowActions
+                  status={summary.status}
+                  completionPct={summary.completionPct}
+                  role={user!.role}
+                  busy={actionBusy}
+                  error={actionError}
+                  onSubmit={() => runAction(() => api.submit(locationCode, monthYear))}
+                  onApprove={() => runAction(() => api.approve(locationCode, monthYear))}
+                  onReject={(note) => runAction(() => api.reject(locationCode, monthYear, note))}
+                  onReset={(reason) => runAction(() => api.reset(locationCode, monthYear, reason))}
+                />
+              }
+            />
+          )
         ) : (
           <div className="dash-card">
             {selection === "ANALYTICS" ? (
