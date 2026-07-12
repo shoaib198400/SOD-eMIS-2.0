@@ -27,6 +27,7 @@ function Dashboard() {
   const [selection, setSelection] = useState<NavSelection>("DASHBOARD");
   const [summary, setSummary] = useState<SubmissionResponse | null>(null);
   const [miAllComplete, setMiAllComplete] = useState(false);
+  const [tankOpts, setTankOpts] = useState<string[]>([]);
   const [actionBusy, setActionBusy] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
 
@@ -40,7 +41,10 @@ function Dashboard() {
       .catch((e) => setActionError((e as Error).message));
     api
       .getMiStatus(locationCode, monthYear)
-      .then((res) => setMiAllComplete(res.allComplete))
+      .then((res) => {
+        setMiAllComplete(res.allComplete);
+        setTankOpts(res.tankOpts.filter((t) => t !== "Other Tanks"));
+      })
       .catch(() => undefined);
   }, [locationCode, monthYear]);
 
@@ -85,16 +89,45 @@ function Dashboard() {
     }
   }
 
+  function downloadTankMaster() {
+    const csv = ["tank_no", ...tankOpts].join("\n");
+    const blob = new Blob([csv], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `tank_master_${locationCode}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
   return (
     <div className="app-shell">
       <aside className="app-sidebar">
         <img src={sideLogo} className="side-logo" alt="" />
-        <SectionNav
-          sectionsComplete={summary?.sectionsComplete ?? {}}
-          miComplete={miAllComplete}
-          selected={selection}
-          onSelect={setSelection}
-        />
+        {selection === "MI" ? (
+          <>
+            <button onClick={() => setSelection("DASHBOARD")} className="nav-btn">
+              🏠 Back to Dashboard
+            </button>
+            <div style={{ color: "white", fontWeight: 700, marginTop: "0.75rem" }}>M&amp;I MIS</div>
+            <div style={{ color: "rgba(255,255,255,0.75)", fontSize: "0.8rem", marginBottom: "0.75rem" }}>
+              Maintenance &amp; Inspection Data
+            </div>
+            <div style={{ fontSize: "0.7rem", textTransform: "uppercase", letterSpacing: "0.6px", color: "rgba(255,255,255,0.6)", margin: "0.4rem 0 0.2rem 0.3rem" }}>
+              Tank Master
+            </div>
+            <button onClick={downloadTankMaster} className="nav-btn" disabled={tankOpts.length === 0}>
+              ⬇ Download Tank Master
+            </button>
+          </>
+        ) : (
+          <SectionNav
+            sectionsComplete={summary?.sectionsComplete ?? {}}
+            miComplete={miAllComplete}
+            selected={selection}
+            onSelect={setSelection}
+          />
+        )}
       </aside>
 
       <main className="app-main">

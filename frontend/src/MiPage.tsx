@@ -3,6 +3,19 @@ import { api } from "./api";
 import type { MiStatusResponse } from "./api";
 import { MiTabEditor } from "./MiTabEditor";
 
+const TAB_ICONS: Record<string, string> = {
+  MI_TANK_OUTAGE: "🛢",
+  MI_MAJOR_REPAIR: "🔧",
+  MI_VRU: "♻️",
+  MI_AUDIT_2526: "📋",
+  MI_AUDIT_2627: "📋",
+  MI_TECH_AUDIT: "🔍",
+  MI_EQUIP_BREAKDOWN: "⚙️",
+  MI_INT_PIPELINE: "🔗",
+  MI_EXT_PIPELINE: "🔗",
+  MI_TANK_STATUS: "📊",
+};
+
 export function MiPage({
   locationCode,
   monthYear,
@@ -54,7 +67,10 @@ export function MiPage({
               boxShadow: "none",
             }}
           >
-            {t.complete ? "✅" : "⬜"} {t.label}
+            <span style={{ background: t.complete ? "#16a34a" : "#9ca3af", borderRadius: 4, padding: "0 0.3rem", marginRight: "0.3rem" }}>
+              {t.complete ? "✓" : "✕"}
+            </span>
+            {TAB_ICONS[t.key] ?? ""} {t.label}
           </button>
         ))}
       </div>

@@ -199,8 +199,8 @@ export function MiTabEditor({
 
       {!disabled && (
         <div style={{ marginTop: "0.75rem" }}>
-          <button onClick={handleSave} disabled={saving} className="btn btn-save">
-            {saving ? "Saving..." : "Save Tab"}
+          <button onClick={handleSave} disabled={saving} className="btn btn-primary">
+            {saving ? "Saving..." : `💾 Save ${tab.label} Data`}
           </button>
         </div>
       )}
