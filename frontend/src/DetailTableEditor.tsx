@@ -9,39 +9,59 @@ interface ColumnDef {
   opts?: string[];
 }
 
+// Ported verbatim from the reference app's _DETAIL_UI config (app.py). Date fields are kept
+// as free text (not <input type="date">) because that's what the original allows — hearing
+// dates etc. are sometimes entered as "TBD" or partial dates, not just ISO dates.
 const TABLE_CONFIGS: Record<string, { title: string; columns: ColumnDef[] }> = {
   RAILWAY_CLAIM: {
-    title: "Railway Claims",
+    title: "Railway Claims Details",
     columns: [
       { key: "claim_no", label: "Claim No.", type: "text" },
-      { key: "year", label: "Year", type: "text" },
+      { key: "year", label: "Year", type: "number" },
       { key: "amount", label: "Amount (Rs)", type: "number" },
-      { key: "status", label: "Status", type: "select", opts: ["Open", "Pending", "Closed"] },
-      { key: "remarks", label: "Remarks", type: "text" },
+      { key: "rr_nos", label: "RR Nos.", type: "text" },
+      { key: "ex_station", label: "Ex", type: "text" },
+      { key: "to_station", label: "To", type: "text" },
+      { key: "wagon_nos", label: "T/Wagon Nos.", type: "text" },
+      { key: "product", label: "Product", type: "text" },
+      { key: "qty", label: "Qty.", type: "number" },
+      { key: "rly", label: "Rly.", type: "text" },
+      { key: "pending_stage", label: "Pending Stage", type: "text" },
+      { key: "status_claim", label: "Status of Claim", type: "text" },
+      { key: "last_hearing", label: "Last Hearing Date", type: "text" },
+      { key: "next_hearing", label: "Next Hearing Date", type: "text" },
+      { key: "rct_status", label: "RCT Status", type: "text" },
+      { key: "case_facts", label: "Case Facts", type: "text" },
+      { key: "rejection_reasons", label: "Rejection Reasons", type: "text" },
+      { key: "shortcomings", label: "ShortComings", type: "text" },
+      { key: "strength", label: "Strength of Case", type: "text" },
+      { key: "recommendation", label: "Recommendation", type: "text" },
     ],
   },
   IRR_DETAIL: {
     title: "IRR Details",
     columns: [
-      { key: "irr_no", label: "IRR No.", type: "text" },
-      { key: "irr_date", label: "IRR Date", type: "date" },
+      { key: "irr_no", label: "IRR #", type: "text" },
+      { key: "irr_date", label: "IRR Date", type: "text" },
       { key: "description", label: "Description", type: "text" },
       { key: "amount", label: "Amount (Rs)", type: "number" },
       { key: "status", label: "Status", type: "select", opts: ["OPEN", "CLOSED"] },
-      { key: "closure_date", label: "Closure Date", type: "date" },
+      { key: "closure_date", label: "Closure Date", type: "text" },
     ],
   },
   LEGAL_CASE: {
-    title: "Legal Cases",
+    title: "Legal Cases Details",
     columns: [
       { key: "court_name", label: "Court Name", type: "text" },
       { key: "case_number", label: "Case Number", type: "text" },
       { key: "cause_title", label: "Cause Title", type: "text" },
       { key: "advocate", label: "Advocate", type: "text" },
-      { key: "nature", label: "Nature", type: "text" },
-      { key: "status", label: "Status", type: "select", opts: ["Open", "Closed"] },
-      { key: "last_hearing", label: "Last Hearing", type: "date" },
-      { key: "next_hearing", label: "Next Hearing", type: "date" },
+      { key: "nature", label: "Nature of Case", type: "text" },
+      { key: "dealership", label: "Dealership / Location", type: "text" },
+      { key: "background", label: "Background", type: "text" },
+      { key: "status", label: "Status", type: "text" },
+      { key: "last_hearing", label: "Last Hearing Date", type: "text" },
+      { key: "next_hearing", label: "Next Hearing Date", type: "text" },
     ],
   },
 };
