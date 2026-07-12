@@ -192,6 +192,11 @@ export const api = {
     setToken(result.token);
     return result;
   },
+  forgotPassword: (loginCode: string, issueDesc: string) =>
+    request<{ ok: boolean }>("/api/auth/forgot-password", {
+      method: "POST",
+      body: JSON.stringify({ loginCode, issueDesc }),
+    }),
   logout: async () => {
     try {
       await request<{ ok: boolean }>("/api/auth/logout", { method: "POST" });

@@ -94,10 +94,6 @@ function Dashboard() {
           selected={selection}
           onSelect={setSelection}
         />
-        <div style={{ flex: 1 }} />
-        <button className="nav-btn" onClick={logout}>
-          Log out
-        </button>
       </aside>
 
       <main className="app-main">
@@ -116,6 +112,9 @@ function Dashboard() {
             />
             <HelpdeskWidget />
             <span className="role-badge">{user!.role}</span>
+            <button className="btn btn-secondary" onClick={logout} style={{ padding: "0.4rem 0.8rem" }}>
+              Log out
+            </button>
           </div>
         </header>
 

@@ -53,6 +53,34 @@ authRouter.post("/login", async (req, res) => {
   });
 });
 
+// Matches the original app's "no self-service reset" pattern — this just files a helpdesk
+// ticket for an Admin to resolve manually, rather than emailing a reset link (Phase 6 territory
+// once the real email system exists). Deliberately public/unauthenticated: this is the
+// forgot-password flow, so the user by definition can't log in yet.
+authRouter.post("/forgot-password", async (req, res) => {
+  const { loginCode, issueDesc } = req.body as { loginCode?: string; issueDesc?: string };
+  if (!loginCode?.trim() || !issueDesc?.trim()) {
+    res.status(400).json({ ok: false, error: "User ID and a description are required" });
+    return;
+  }
+
+  const result = await pool.query("select id, location_code from users where login_code = $1", [
+    loginCode.trim().toUpperCase(),
+  ]);
+  const user = result.rows[0];
+  if (user?.location_code) {
+    await pool.query(
+      `insert into helpdesk_tickets (location_code, user_id, issue_type, issue_desc)
+       values ($1, $2, 'Password Reset Request', $3)`,
+      [user.location_code, user.id, issueDesc.trim()]
+    );
+    await logAudit({ actorUserId: user.id, actorLocationCode: user.location_code, action: "ForgotPassword" });
+  }
+  // Always return success, whether or not the login code matched — avoids confirming/denying
+  // which login codes are real to an unauthenticated caller.
+  res.json({ ok: true });
+});
+
 authRouter.post("/logout", requireAuth, async (req, res) => {
   await pool.query("update users set current_session_jti = null where id = $1", [req.user!.sub]);
   res.json({ ok: true });
