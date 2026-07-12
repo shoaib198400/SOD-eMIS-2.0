@@ -26,12 +26,14 @@ zoneRouter.get("/locations", requireAuth, requireRole("Zone", "Admin"), async (r
     return;
   }
 
-  const zoneFilter = req.user!.role === "Admin" ? null : req.user!.zoneId;
+  const zoneFilter =
+    req.user!.role === "Admin" ? (req.query.zoneId ? Number(req.query.zoneId) : null) : req.user!.zoneId;
   const result = await pool.query(
-    `select l.code as location_code, l.name as location_name, l.loc_type,
+    `select l.code as location_code, l.name as location_name, l.loc_type, l.zone_id, z.name as zone_name,
             coalesce(ms.status, 'NOT_STARTED') as status,
             coalesce(ms.completion_pct, 0) as completion_pct
      from locations l
+     left join zones z on z.id = l.zone_id
      left join monthly_submissions ms on ms.location_code = l.code and ms.month_year = $1
      where ($2::bigint is null or l.zone_id = $2)
        and l.active = true

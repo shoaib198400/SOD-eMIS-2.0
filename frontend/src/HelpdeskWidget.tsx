@@ -22,13 +22,13 @@ export function HelpdeskWidget() {
 
   return (
     <div style={{ position: "relative" }}>
-      <button onClick={() => setOpen((v) => !v)} className="btn btn-secondary">
-        Help
+      <button onClick={() => setOpen((v) => !v)} className="nav-btn">
+        🆘 Helpdesk
       </button>
       {open && (
         <div
           className="dash-card"
-          style={{ position: "absolute", right: 0, top: "2.5rem", width: 280, zIndex: 10, color: "var(--text-body)" }}
+          style={{ position: "fixed", left: 250, bottom: "1rem", width: 280, zIndex: 50, color: "var(--text-body)" }}
         >
           {sent ? (
             <p>Your ticket was submitted. An admin will respond soon.</p>

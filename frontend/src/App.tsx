@@ -12,6 +12,7 @@ const AnalyticsPage = lazy(() => import("./AnalyticsPage").then((m) => ({ defaul
 import { ZoneDashboard } from "./ZoneDashboard";
 import { AdminDashboard } from "./AdminDashboard";
 import { HelpdeskWidget } from "./HelpdeskWidget";
+import { FyMonthPicker } from "./FyMonthPicker";
 import { api } from "./api";
 import type { SubmissionResponse } from "./api";
 import sideLogo from "./assets/brand/side_logo.png";
@@ -129,6 +130,8 @@ function Dashboard() {
             onSelect={setSelection}
           />
         )}
+        <div style={{ flex: 1 }} />
+        <HelpdeskWidget />
       </aside>
 
       <main className="app-main">
@@ -139,21 +142,20 @@ function Dashboard() {
           </div>
           <img src={titleBanner} className="title-banner" alt="" />
           <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
-            <input
-              type="month"
-              value={monthYear}
-              onChange={(e) => setMonthYear(e.target.value)}
-              style={{ background: "white" }}
-            />
-            <HelpdeskWidget />
             <span className="location-pill">
               📍 {user!.locationName ?? locationCode} | {user!.role}
             </span>
+          </div>
+        </header>
+
+        <div className="filter-row">
+          <FyMonthPicker monthYear={monthYear} onChange={setMonthYear} />
+          <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
             <button className="btn-logout" onClick={logout}>
               ↪ Logout
             </button>
           </div>
-        </header>
+        </div>
 
         {summary && (
           <div className="dash-card">
@@ -173,7 +175,7 @@ function Dashboard() {
         )}
 
         {selection === "DASHBOARD" ? (
-          summary && <DashboardHome user={user!} monthYear={monthYear} summary={summary} miAllComplete={miAllComplete} onNavigate={setSelection} />
+          summary && <DashboardHome user={user!} monthYear={monthYear} summary={summary} onNavigate={setSelection} />
         ) : (
           <div className="dash-card">
             {selection === "ANALYTICS" ? (

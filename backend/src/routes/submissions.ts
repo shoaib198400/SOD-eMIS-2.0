@@ -35,7 +35,7 @@ function withAutoCalc(rawValues: Record<string, string>): Record<string, string>
     for (const field of fields) {
       if (!field.auto) continue;
       const computed = evaluateAutoCalc(field.auto, merged);
-      merged[field.key] = computed === null ? "" : String(computed);
+      merged[field.key] = computed === null ? "" : computed.toFixed(field.dec ?? 2);
     }
   }
   return merged;

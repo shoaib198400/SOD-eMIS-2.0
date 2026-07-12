@@ -16,9 +16,6 @@ export function SectionNav({
       <button onClick={() => onSelect("DASHBOARD")} className={`nav-btn${selected === "DASHBOARD" ? " active" : ""}`}>
         🏠 {selected === "DASHBOARD" ? "Dashboard" : "Back to Dashboard"}
       </button>
-      <button onClick={() => onSelect("ANALYTICS")} className={`nav-btn${selected === "ANALYTICS" ? " active" : ""}`}>
-        📊 Analytics
-      </button>
 
       <div
         style={{
@@ -37,7 +34,7 @@ export function SectionNav({
         return (
           <div key={sectionNo}>
             <button onClick={() => onSelect(sectionNo)} className={`nav-btn${selected === sectionNo ? " active" : ""}`}>
-              ▶ {name}
+              {name}
             </button>
             {sectionNo === 5 && (
               <button

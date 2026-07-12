@@ -1,5 +1,6 @@
-import { SECTION_NAMES } from "./sectionNames";
+import { SECTION_NAMES, SECTION_NAMES_SHORT } from "./sectionNames";
 import { computeDeadline } from "./deadline";
+import { api } from "./api";
 import type { SubmissionResponse, MeResponse } from "./api";
 import type { NavSelection } from "./SectionNav";
 
@@ -15,19 +16,18 @@ export function DashboardHome({
   user,
   monthYear,
   summary,
-  miAllComplete,
   onNavigate,
 }: {
   user: MeResponse;
   monthYear: string;
   summary: SubmissionResponse;
-  miAllComplete: boolean;
   onNavigate: (selection: NavSelection) => void;
 }) {
   const deadline = computeDeadline(monthYear);
   const sectionsDone = Object.values(summary.sectionsComplete).filter(Boolean).length;
   const totalSections = Object.keys(SECTION_NAMES).length;
   const showOverdueBanner = summary.status !== "SUBMITTED" && (deadline.urgency === "overdue" || deadline.urgency === "urgent");
+  const locked = summary.status === "SUBMITTED" || summary.status === "PENDING_REVIEW";
 
   return (
     <div>
@@ -49,23 +49,23 @@ export function DashboardHome({
 
       <div className="stat-row">
         <div className="stat-card">
-          <div className="label">Period</div>
+          <div className="label">📅 Period</div>
           <div className="value" style={{ fontSize: "1.1rem" }}>
             {deadline.monthLabel}
           </div>
         </div>
         <div className="stat-card">
-          <div className="label">Status</div>
+          <div className="label">📊 Status</div>
           <div className="value" style={{ fontSize: "1.1rem" }}>
             {STATUS_LABELS[summary.status]}
           </div>
         </div>
         <div className="stat-card">
-          <div className="label">Completion</div>
+          <div className="label">✅ Completion</div>
           <div className="value">{summary.completionPct}%</div>
         </div>
         <div className="stat-card">
-          <div className="label">Sections Done</div>
+          <div className="label">📋 Sections Done</div>
           <div className="value">
             {sectionsDone}/{totalSections}
           </div>
@@ -86,30 +86,30 @@ export function DashboardHome({
             </span>
           </div>
           <div className="status-card-body">
-            <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.8rem", fontWeight: 600, color: "var(--text-muted)", textTransform: "uppercase" }}>
-              <span>Completion Progress</span>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", fontSize: "0.8rem", fontWeight: 600, color: "var(--text-muted)", textTransform: "uppercase" }}>
+              <span style={{ display: "flex", alignItems: "center", gap: "0.6rem" }}>
+                Completion Progress
+                {locked && <span className="status-pill" style={{ background: "#ede9fe", color: "#5b21b6" }}>🔒 Locked</span>}
+              </span>
               <span style={{ color: "var(--navy)" }}>{summary.completionPct}%</span>
             </div>
             <div className="progress-track">
-              <div className="progress-fill" style={{ width: `${summary.completionPct}%` }} />
+              <div className={`progress-fill${summary.status === "SUBMITTED" ? " complete" : ""}`} style={{ width: `${summary.completionPct}%` }} />
             </div>
 
             <div style={{ fontSize: "0.8rem", fontWeight: 600, color: "var(--text-muted)", textTransform: "uppercase", marginBottom: "0.5rem" }}>
               Section Completion
             </div>
             <div className="section-check-grid">
-              {Object.entries(SECTION_NAMES).map(([num, name]) => {
+              {Object.entries(SECTION_NAMES_SHORT).map(([num, name]) => {
                 const sectionNo = Number(num);
                 const done = summary.sectionsComplete[sectionNo];
                 return (
                   <button key={sectionNo} onClick={() => onNavigate(sectionNo)} className={`section-check ${done ? "done" : "pending"}`}>
-                    {done ? "✅" : "⬜"} {name}
+                    {done ? "✅" : "⬜"} {name.replace(" - ", " ")}
                   </button>
                 );
               })}
-              <button onClick={() => onNavigate("MI")} className={`section-check ${miAllComplete ? "done" : "pending"}`}>
-                {miAllComplete ? "✅" : "⬜"} S5A — M&amp;I MIS
-              </button>
             </div>
           </div>
         </div>
@@ -123,6 +123,31 @@ export function DashboardHome({
               <br />
               Submit by the 5th of every month for the preceding month.
             </div>
+            <p style={{ fontSize: "0.8rem", color: "var(--text-muted)" }}>
+              Click the button below to open the full MIS Guidelines PDF with section-by-section instructions.
+            </p>
+            <a
+              href="/MIS_Guidelines.pdf"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="btn btn-secondary"
+              style={{
+                display: "block",
+                width: "100%",
+                textAlign: "center",
+                marginBottom: "0.5rem",
+                background: "white",
+                color: "var(--text-body)",
+                border: "1px solid var(--border-input)",
+                boxShadow: "none",
+                textDecoration: "none",
+              }}
+            >
+              📄 Open MIS Guidelines PDF
+            </a>
+            <button onClick={() => api.exportBlankTemplate()} className="btn btn-save" style={{ width: "100%" }}>
+              📊 Excel Template
+            </button>
           </div>
         </div>
       </div>

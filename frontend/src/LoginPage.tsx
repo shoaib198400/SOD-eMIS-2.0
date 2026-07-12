@@ -8,6 +8,7 @@ export function LoginPage() {
   const { login } = useAuth();
   const [loginCode, setLoginCode] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -131,22 +132,42 @@ export function LoginPage() {
             <div style={{ fontSize: 11, fontWeight: 700, color: "#001F5E", letterSpacing: "0.8px", textTransform: "uppercase" }}>
               Password
             </div>
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="Enter your password"
-              style={{
-                width: "100%",
-                border: "2px solid #c0cce8",
-                borderRadius: 8,
-                padding: "10px 14px",
-                fontSize: 13,
-                color: "#001F5E",
-                background: "#ffffff",
-                fontWeight: 500,
-              }}
-            />
+            <div style={{ position: "relative" }}>
+              <input
+                type={showPassword ? "text" : "password"}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="Enter your password"
+                style={{
+                  width: "100%",
+                  border: "2px solid #c0cce8",
+                  borderRadius: 8,
+                  padding: "10px 40px 10px 14px",
+                  fontSize: 13,
+                  color: "#001F5E",
+                  background: "#ffffff",
+                  fontWeight: 500,
+                }}
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword((v) => !v)}
+                aria-label={showPassword ? "Hide password" : "Show password"}
+                style={{
+                  all: "unset",
+                  position: "absolute",
+                  right: 10,
+                  top: "50%",
+                  transform: "translateY(-50%)",
+                  cursor: "pointer",
+                  fontSize: 15,
+                  lineHeight: 1,
+                  color: "#5b6b8c",
+                }}
+              >
+                {showPassword ? "🙈" : "👁"}
+              </button>
+            </div>
           </label>
 
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 8 }}>

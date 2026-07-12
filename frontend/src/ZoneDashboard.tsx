@@ -3,6 +3,7 @@ import { useAuth } from "./AuthContext";
 import { api } from "./api";
 import type { ZoneLocation, RevisionRequest, SubmissionResponse, MiStatusResponse } from "./api";
 import { SECTION_NAMES_SHORT } from "./sectionNames";
+import { FyMonthPicker } from "./FyMonthPicker";
 import titleBanner from "./assets/brand/title_banner.png";
 import sideLogo from "./assets/brand/side_logo.png";
 const AnalyticsPage = lazy(() => import("./AnalyticsPage").then((m) => ({ default: m.AnalyticsPage })));
@@ -21,6 +22,57 @@ const STATUS_PILL_CLASS: Record<string, string> = {
 };
 
 type Page = "locations" | "analytics" | "reports";
+
+function ReportsPanel({ zoneMonthYear }: { zoneMonthYear: string }) {
+  const [monthYear, setMonthYear] = useState(zoneMonthYear);
+  const [busy, setBusy] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  async function run(key: string, action: () => Promise<void>) {
+    setBusy(key);
+    setError(null);
+    try {
+      await action();
+    } catch (e) {
+      setError((e as Error).message);
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  return (
+    <div>
+      <h2 style={{ fontSize: "1.1rem", color: "var(--navy-deep)", marginTop: 0 }}>MIS Reports</h2>
+      {error && <p style={{ color: "var(--red)" }}>{error}</p>}
+      <label>
+        Month: <input type="month" value={monthYear} onChange={(e) => setMonthYear(e.target.value)} />
+      </label>
+      <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap", marginTop: "0.75rem" }}>
+        <button
+          onClick={() => run("submitted", () => api.exportSubmittedData(monthYear))}
+          disabled={busy !== null}
+          className="btn btn-save"
+        >
+          {busy === "submitted" ? "Preparing..." : "⬇ Submitted Data (.xlsx)"}
+        </button>
+        <button
+          onClick={() => run("pending", () => api.exportPendingList(monthYear))}
+          disabled={busy !== null}
+          className="btn btn-save"
+        >
+          {busy === "pending" ? "Preparing..." : "⬇ Pending Locations (.xlsx)"}
+        </button>
+        <button
+          onClick={() => run("tank", () => api.exportTankMaster())}
+          disabled={busy !== null}
+          className="btn btn-save"
+        >
+          {busy === "tank" ? "Preparing..." : "⬇ Tank Master (.xlsx)"}
+        </button>
+      </div>
+    </div>
+  );
+}
 
 export function ZoneDashboard() {
   const { user, logout } = useAuth();
@@ -118,11 +170,15 @@ export function ZoneDashboard() {
           <img src={titleBanner} className="title-banner" alt="" />
           <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
             <span className="location-pill">📍 {user?.zoneName} | Zone</span>
-            <button className="btn-logout" onClick={logout}>
-              ↪ Logout
-            </button>
           </div>
         </header>
+
+        <div className="filter-row">
+          <FyMonthPicker monthYear={monthYear} onChange={setMonthYear} />
+          <button className="btn-logout" onClick={logout}>
+            ↪ Logout
+          </button>
+        </div>
 
         {error && <p style={{ color: "var(--red)" }}>{error}</p>}
 
@@ -134,15 +190,10 @@ export function ZoneDashboard() {
           </div>
         ) : page === "reports" ? (
           <div className="dash-card">
-            <p style={{ color: "var(--text-muted)" }}>MIS reports — coming in a later phase.</p>
+            <ReportsPanel zoneMonthYear={monthYear} />
           </div>
         ) : (
           <>
-            <div style={{ marginBottom: "1rem" }}>
-              <label>
-                Month: <input type="month" value={monthYear} onChange={(e) => setMonthYear(e.target.value)} />
-              </label>
-            </div>
 
             <div className="stat-row" style={{ gridTemplateColumns: "repeat(5, 1fr)" }}>
               <div className="stat-card" style={{ borderLeft: "4px solid #6b7280" }}>
@@ -236,6 +287,19 @@ export function ZoneDashboard() {
                   </div>
                 </div>
               )}
+
+              <h3 style={{ fontSize: "0.95rem", color: "var(--navy-deep)", marginTop: "1.5rem" }}>⬇ Downloads</h3>
+              <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
+                <button onClick={() => api.exportSubmittedData(monthYear)} className="btn btn-save" style={{ fontSize: "0.85rem" }}>
+                  ⬇ Submitted Data (.xlsx)
+                </button>
+                <button onClick={() => api.exportPendingList(monthYear)} className="btn btn-save" style={{ fontSize: "0.85rem" }}>
+                  ⬇ Pending Locations (.xlsx)
+                </button>
+                <button onClick={() => api.exportTankMaster()} className="btn btn-save" style={{ fontSize: "0.85rem" }}>
+                  ⬇ Tank Master (.xlsx)
+                </button>
+              </div>
             </div>
 
             <div className="dash-card">

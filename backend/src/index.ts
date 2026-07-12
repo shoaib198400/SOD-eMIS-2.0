@@ -10,6 +10,7 @@ import { zoneRouter } from "./routes/zone";
 import { adminRouter } from "./routes/admin";
 import { helpdeskRouter } from "./routes/helpdesk";
 import { analyticsRouter } from "./routes/analytics";
+import { exportsRouter } from "./routes/exports";
 import { REFRESHED_TOKEN_HEADER } from "./auth";
 
 const app = express();
@@ -40,6 +41,7 @@ app.use("/api/zone", zoneRouter);
 app.use("/api/admin", adminRouter);
 app.use("/api/helpdesk", helpdeskRouter);
 app.use("/api/analytics", analyticsRouter);
+app.use("/api/exports", exportsRouter);
 
 app.listen(PORT, () => {
   console.log(`Backend listening on port ${PORT}`);

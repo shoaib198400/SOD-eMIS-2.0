@@ -39,6 +39,29 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   return res.json();
 }
 
+// Excel exports stream a file rather than JSON, so they bypass request() and read the
+// filename off Content-Disposition instead of building it client-side.
+async function downloadFile(path: string, fallbackName: string): Promise<void> {
+  const token = getToken();
+  const res = await fetch(`${API_URL}${path}`, {
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
+  });
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    throw new Error(body.message || body.error || `Request failed: ${res.status}`);
+  }
+  const disposition = res.headers.get("Content-Disposition") || "";
+  const match = disposition.match(/filename="([^"]+)"/);
+  const filename = match ? match[1] : fallbackName;
+  const blob = await res.blob();
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
 export interface FieldDef {
   no: number;
   key: string;
@@ -117,6 +140,8 @@ export interface ZoneLocation {
   location_code: string;
   location_name: string;
   loc_type: string;
+  zone_id: number | null;
+  zone_name: string | null;
   status: SubmissionStatus;
   completion_pct: string;
 }
@@ -249,8 +274,10 @@ export const api = {
       method: "PUT",
       body: JSON.stringify({ isNotApplicable, rows }),
     }),
-  getZoneLocations: (monthYear: string) =>
-    request<{ locations: ZoneLocation[] }>(`/api/zone/locations?monthYear=${monthYear}`),
+  getZoneLocations: (monthYear: string, zoneId?: number | null) =>
+    request<{ locations: ZoneLocation[] }>(
+      `/api/zone/locations?monthYear=${monthYear}${zoneId ? `&zoneId=${zoneId}` : ""}`
+    ),
   createRevisionRequest: (locationCode: string, monthYear: string, reason: string) =>
     request<{ ok: boolean; id: number }>("/api/zone/revision-requests", {
       method: "POST",
@@ -312,4 +339,12 @@ export const api = {
       monthlyCompliance: { monthYear: string; totalLocations: number; submittedCount: number; pct: number }[];
       leaderboard: { locationCode: string; locationName: string; submittedCount: number; totalMonths: number; pct: number }[];
     }>(`/api/analytics/compliance?fyStartYear=${fyStartYear}`),
+  exportSubmittedData: (monthYear: string) =>
+    downloadFile(`/api/exports/submitted-data?monthYear=${monthYear}`, `Submitted_MIS_${monthYear}.xlsx`),
+  exportPendingList: (monthYear: string) =>
+    downloadFile(`/api/exports/pending-list?monthYear=${monthYear}`, `Pending_MIS_${monthYear}.xlsx`),
+  exportTankMaster: () => downloadFile("/api/exports/tank-master", "Tank_Master.xlsx"),
+  exportBlankTemplate: () => downloadFile("/api/exports/blank-template", "MIS_Blank_Template.xlsx"),
+  exportConsolidatedFy: (fyStartYear: number) =>
+    downloadFile(`/api/exports/consolidated-fy?fyStartYear=${fyStartYear}`, `Full_MIS_FY${fyStartYear}.xlsx`),
 };

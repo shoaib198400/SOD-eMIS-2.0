@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { api } from "./api";
 import type { MiStatusResponse } from "./api";
 import { MiTabEditor } from "./MiTabEditor";
+import { computeDeadline } from "./deadline";
 
 const TAB_ICONS: Record<string, string> = {
   MI_TANK_OUTAGE: "🛢",
@@ -35,18 +36,36 @@ export function MiPage({
       setStatus(res);
       setSelectedTab((prev) => prev ?? res.tabs[0]?.key ?? null);
     });
-    onAnySaved?.();
-  }, [locationCode, monthYear, onAnySaved]);
+  }, [locationCode, monthYear]);
 
   useEffect(() => {
     refreshStatus();
   }, [refreshStatus]);
 
+  function handleTabSaved() {
+    refreshStatus();
+    onAnySaved?.();
+  }
+
   if (!status) return <p>Loading M&I status...</p>;
+
+  const monthLabel = computeDeadline(monthYear).monthLabel;
 
   return (
     <div>
-      <h2 style={{ marginBottom: "0.25rem", color: "var(--navy-deep)" }}>Section 5A — Maintenance &amp; Inspection</h2>
+      <div className="dash-card" style={{ marginBottom: "1rem" }}>
+        <div style={{ fontWeight: 700, color: "var(--navy-deep)" }}>M&amp;I MIS — {monthLabel}</div>
+        <div style={{ fontSize: "0.85rem", color: "var(--text-muted)" }}>Maintenance &amp; Inspection Monthly Information System</div>
+      </div>
+
+      <div className="deadline-callout" style={{ marginBottom: "1rem" }}>
+        ⚠ <strong>How to complete all 10 sections:</strong>
+        <br />
+        For each section that applies to your location, enter the relevant data and save. For sections that don't
+        apply, tick the <strong>Not Applicable</strong> checkbox inside the tab. All 10 sections must be complete
+        before this month can be submitted for review.
+      </div>
+
       <p style={{ color: "var(--text-muted)" }}>
         <span className={`status-pill ${status.allComplete ? "submitted" : "not-started"}`}>
           {status.allComplete ? "All 10 M&I tabs complete" : "Not all M&I tabs complete"}
@@ -82,7 +101,7 @@ export function MiPage({
           monthYear={monthYear}
           tabKey={selectedTab}
           disabled={disabled}
-          onSaved={refreshStatus}
+          onSaved={handleTabSaved}
         />
       )}
     </div>

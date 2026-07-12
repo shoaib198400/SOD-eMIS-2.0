@@ -47,35 +47,21 @@ function validateRow(fields: MiFieldDef[], row: Record<string, string>): string 
 // A tab is "complete" (done) the moment it has any saved data (real rows or singleton data)
 // OR has been explicitly marked Not Applicable — matching the original's "any saved row,
 // including the NA row, flips the badge" behavior, just without magic "NA" string values.
-async function tabHasData(submissionId: number, tabKey: string, isMultiRow: boolean): Promise<boolean> {
-  if (isMultiRow) {
-    const result = await pool.query("select 1 from mi_rows where submission_id = $1 and tab_key = $2 limit 1", [
-      submissionId,
-      tabKey,
-    ]);
-    return (result.rowCount ?? 0) > 0;
-  }
-  const result = await pool.query("select 1 from mi_singletons where submission_id = $1 and tab_key = $2", [
-    submissionId,
-    tabKey,
-  ]);
-  return (result.rowCount ?? 0) > 0;
-}
-
+// Batched into 3 queries total rather than looping tabHasData per tab (was up to 21 sequential
+// round-trips per status check — enough to exhaust the pool under concurrent requests).
 export async function getMiCompletion(submissionId: number): Promise<{ tabKey: string; complete: boolean }[]> {
-  const naResult = await pool.query(
-    "select tab_key, is_not_applicable from mi_submodule_status where submission_id = $1",
-    [submissionId]
-  );
+  const [naResult, rowsResult, singletonsResult] = await Promise.all([
+    pool.query("select tab_key, is_not_applicable from mi_submodule_status where submission_id = $1", [submissionId]),
+    pool.query("select distinct tab_key from mi_rows where submission_id = $1", [submissionId]),
+    pool.query("select tab_key from mi_singletons where submission_id = $1", [submissionId]),
+  ]);
   const naMap = new Map(naResult.rows.map((r) => [r.tab_key, r.is_not_applicable]));
+  const tabsWithData = new Set([...rowsResult.rows.map((r) => r.tab_key), ...singletonsResult.rows.map((r) => r.tab_key)]);
 
-  const results: { tabKey: string; complete: boolean }[] = [];
-  for (const tab of MI_TABS) {
-    const isNA = naMap.get(tab.key) === true;
-    const hasData = isNA || (await tabHasData(submissionId, tab.key, tab.isMultiRow));
-    results.push({ tabKey: tab.key, complete: hasData });
-  }
-  return results;
+  return MI_TABS.map((tab) => ({
+    tabKey: tab.key,
+    complete: naMap.get(tab.key) === true || tabsWithData.has(tab.key),
+  }));
 }
 
 miRouter.get("/:locationCode/:monthYear/status", requireAuth, async (req, res) => {
@@ -93,8 +79,7 @@ miRouter.get("/:locationCode/:monthYear/status", requireAuth, async (req, res) =
     return;
   }
 
-  const tankOpts = await getTankOpts(locationCode);
-  const submission = await findSubmission(locationCode, monthDate);
+  const [tankOpts, submission] = await Promise.all([getTankOpts(locationCode), findSubmission(locationCode, monthDate)]);
   if (!submission) {
     res.json({
       tabs: MI_TABS.map((t) => ({ key: t.key, label: t.label, isMultiRow: t.isMultiRow, complete: false })),

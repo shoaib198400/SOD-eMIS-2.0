@@ -1,7 +1,9 @@
 import { useCallback, useEffect, useState, Suspense, lazy } from "react";
 import { useAuth } from "./AuthContext";
 import { api } from "./api";
-import type { ZoneLocation, RevisionRequest, AdminLocation, Zone, HelpdeskTicket, AuditLogEntry } from "./api";
+import type { ZoneLocation, RevisionRequest, AdminLocation, Zone, HelpdeskTicket, AuditLogEntry, SubmissionResponse } from "./api";
+import { FyMonthPicker } from "./FyMonthPicker";
+import { SECTION_NAMES_SHORT } from "./sectionNames";
 import titleBanner from "./assets/brand/title_banner.png";
 import sideLogo from "./assets/brand/side_logo.png";
 const AnalyticsPage = lazy(() => import("./AnalyticsPage").then((m) => ({ default: m.AnalyticsPage })));
@@ -23,12 +25,13 @@ const STATUS_PILL_CLASS: Record<string, string> = {
 };
 
 type Tab = "overview" | "locations" | "helpdesk" | "audit" | "traffic" | "analytics";
-type AdminTool = "setup-zone" | "audit-accounts" | "sync-tank-master" | "sync-locations" | "reset-data" | null;
+type AdminTool = "setup-zone" | "audit-accounts" | "sync-tank-master" | "sync-locations" | "reset-data" | "data-exports" | null;
 
 export function AdminDashboard() {
   const { user, logout } = useAuth();
   const [tab, setTab] = useState<Tab>("overview");
   const [tool, setTool] = useState<AdminTool>(null);
+  const [monthYear, setMonthYear] = useState(currentMonthKey());
 
   return (
     <div className="app-shell">
@@ -57,6 +60,9 @@ export function AdminDashboard() {
         <button onClick={() => setTool(tool === "reset-data" ? null : "reset-data")} className={`nav-btn${tool === "reset-data" ? " active" : ""}`}>
           🗑 Reset Location Data
         </button>
+        <button onClick={() => setTool(tool === "data-exports" ? null : "data-exports")} className={`nav-btn${tool === "data-exports" ? " active" : ""}`}>
+          ⬇ Data Exports
+        </button>
       </aside>
 
       <main className="app-main">
@@ -68,11 +74,15 @@ export function AdminDashboard() {
           <img src={titleBanner} className="title-banner" alt="" />
           <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
             <span className="location-pill">📍 HQ Operations | {user?.loginCode}</span>
-            <button className="btn-logout" onClick={logout}>
-              ↪ Logout
-            </button>
           </div>
         </header>
+
+        <div className="filter-row">
+          <FyMonthPicker monthYear={monthYear} onChange={setMonthYear} />
+          <button className="btn-logout" onClick={logout}>
+            ↪ Logout
+          </button>
+        </div>
 
         {tool && (
           <div className="dash-card">
@@ -94,7 +104,7 @@ export function AdminDashboard() {
         </div>
 
         <div className="dash-card">
-          {tab === "overview" && <OverviewTab />}
+          {tab === "overview" && <OverviewTab monthYear={monthYear} />}
           {tab === "locations" && <LocationsTab />}
           {tab === "analytics" && (
             <Suspense fallback={<p>Loading analytics...</p>}>
@@ -117,6 +127,9 @@ function AdminToolPanel({ tool, onClose }: { tool: Exclude<AdminTool, null>; onC
   const [codes, setCodes] = useState("");
   const [csvText, setCsvText] = useState("");
   const [accounts, setAccounts] = useState<{ id: number; login_code: string; role: string; zone_name: string | null; active: boolean }[]>([]);
+  const [exportMonthYear, setExportMonthYear] = useState(currentMonthKey());
+  const [exportFyStartYear, setExportFyStartYear] = useState(new Date().getMonth() >= 3 ? new Date().getFullYear() : new Date().getFullYear() - 1);
+  const [exportBusy, setExportBusy] = useState<string | null>(null);
 
   useEffect(() => {
     if (tool === "audit-accounts") {
@@ -184,6 +197,18 @@ function AdminToolPanel({ tool, onClose }: { tool: Exclude<AdminTool, null>; onC
     }
   }
 
+  async function runExport(key: string, action: () => Promise<void>) {
+    setExportBusy(key);
+    setError(null);
+    try {
+      await action();
+    } catch (e) {
+      setError((e as Error).message);
+    } finally {
+      setExportBusy(null);
+    }
+  }
+
   return (
     <div>
       <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "0.5rem" }}>
@@ -193,6 +218,7 @@ function AdminToolPanel({ tool, onClose }: { tool: Exclude<AdminTool, null>; onC
           {tool === "sync-tank-master" && "Upload Tank Master"}
           {tool === "sync-locations" && "Sync Missing Location Accounts"}
           {tool === "reset-data" && "Reset Location Data"}
+          {tool === "data-exports" && "Data Exports"}
         </strong>
         <button onClick={onClose} className="btn btn-secondary" style={{ padding: "0.2rem 0.6rem", fontSize: "0.8rem" }}>
           Close
@@ -269,22 +295,76 @@ function AdminToolPanel({ tool, onClose }: { tool: Exclude<AdminTool, null>; onC
           </button>
         </>
       )}
+
+      {tool === "data-exports" && (
+        <>
+          <div style={{ display: "flex", gap: "1.5rem", flexWrap: "wrap", marginBottom: "0.75rem" }}>
+            <label>
+              Month: <input type="month" value={exportMonthYear} onChange={(e) => setExportMonthYear(e.target.value)} />
+            </label>
+            <label>
+              FY Start Year:{" "}
+              <input
+                type="number"
+                value={exportFyStartYear}
+                onChange={(e) => setExportFyStartYear(Number(e.target.value))}
+                style={{ width: "6rem" }}
+              />
+            </label>
+          </div>
+          <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
+            <button
+              onClick={() => runExport("submitted", () => api.exportSubmittedData(exportMonthYear))}
+              disabled={exportBusy !== null}
+              className="btn btn-save"
+            >
+              {exportBusy === "submitted" ? "Preparing..." : "⬇ Submitted Data (.xlsx)"}
+            </button>
+            <button
+              onClick={() => runExport("pending", () => api.exportPendingList(exportMonthYear))}
+              disabled={exportBusy !== null}
+              className="btn btn-save"
+            >
+              {exportBusy === "pending" ? "Preparing..." : "⬇ Pending Locations (.xlsx)"}
+            </button>
+            <button onClick={() => runExport("tank", () => api.exportTankMaster())} disabled={exportBusy !== null} className="btn btn-save">
+              {exportBusy === "tank" ? "Preparing..." : "⬇ Tank Master (.xlsx)"}
+            </button>
+            <button
+              onClick={() => runExport("fy", () => api.exportConsolidatedFy(exportFyStartYear))}
+              disabled={exportBusy !== null}
+              className="btn btn-save"
+            >
+              {exportBusy === "fy" ? "Preparing..." : `⬇ Full FY${exportFyStartYear}-${String(exportFyStartYear + 1).slice(2)} Data (.xlsx)`}
+            </button>
+          </div>
+        </>
+      )}
     </div>
   );
 }
 
-function OverviewTab() {
-  const [monthYear, setMonthYear] = useState(currentMonthKey());
+function OverviewTab({ monthYear }: { monthYear: string }) {
   const [locations, setLocations] = useState<ZoneLocation[]>([]);
   const [requests, setRequests] = useState<RevisionRequest[]>([]);
+  const [zones, setZones] = useState<Zone[]>([]);
+  const [zoneFilter, setZoneFilter] = useState<string>("");
   const [error, setError] = useState<string | null>(null);
+  const [expanded, setExpanded] = useState<string | null>(null);
+  const [viewData, setViewData] = useState<SubmissionResponse | null>(null);
 
   const refresh = useCallback(() => {
-    api.getZoneLocations(monthYear).then((r) => setLocations(r.locations)).catch((e) => setError((e as Error).message));
+    api
+      .getZoneLocations(monthYear, zoneFilter ? Number(zoneFilter) : null)
+      .then((r) => setLocations(r.locations))
+      .catch((e) => setError((e as Error).message));
     api.getRevisionRequests().then((r) => setRequests(r.requests)).catch(() => undefined);
-  }, [monthYear]);
+  }, [monthYear, zoneFilter]);
 
   useEffect(() => refresh(), [refresh]);
+  useEffect(() => {
+    api.getZones().then((r) => setZones(r.zones)).catch(() => undefined);
+  }, []);
 
   async function handle(action: () => Promise<unknown>) {
     try {
@@ -293,6 +373,16 @@ function OverviewTab() {
     } catch (e) {
       setError((e as Error).message);
     }
+  }
+
+  async function toggleView(code: string) {
+    if (expanded === code) {
+      setExpanded(null);
+      return;
+    }
+    const res = await api.getSubmission(code, monthYear);
+    setViewData(res);
+    setExpanded(code);
   }
 
   const stats = {
@@ -305,9 +395,6 @@ function OverviewTab() {
 
   return (
     <div>
-      <label>
-        Month: <input type="month" value={monthYear} onChange={(e) => setMonthYear(e.target.value)} />
-      </label>
       {error && <p style={{ color: "var(--red)" }}>{error}</p>}
 
       <div className="stat-row" style={{ gridTemplateColumns: "repeat(5, 1fr)" }}>
@@ -333,29 +420,50 @@ function OverviewTab() {
         </div>
       </div>
 
-      <h3 style={{ color: "var(--navy-deep)" }}>All Locations — {monthYear}</h3>
-      <table className="themed-table" style={{ marginBottom: "1.5rem" }}>
-        <thead>
-          <tr>
-            <th>Location</th>
-            <th>Status</th>
-            <th>Completion</th>
-          </tr>
-        </thead>
-        <tbody>
-          {locations.map((loc) => (
-            <tr key={loc.location_code}>
-              <td>
-                {loc.location_name} ({loc.location_code})
-              </td>
-              <td>
-                <span className={`status-pill ${STATUS_PILL_CLASS[loc.status] ?? "not-started"}`}>{loc.status}</span>
-              </td>
-              <td>{loc.completion_pct}%</td>
-            </tr>
+      <div style={{ margin: "1rem 0" }}>
+        <div className="fy-field-label">Filter by Zone</div>
+        <select value={zoneFilter} onChange={(e) => setZoneFilter(e.target.value)} style={{ minWidth: 260 }}>
+          <option value="">All Zones</option>
+          {zones.map((z) => (
+            <option key={z.id} value={z.id}>
+              {z.name}
+            </option>
           ))}
-        </tbody>
-      </table>
+        </select>
+      </div>
+
+      <h3 style={{ color: "var(--navy-deep)" }}>All Locations — {monthYear}</h3>
+      <div style={{ marginBottom: "1.5rem" }}>
+        {locations.map((loc) => (
+          <div key={loc.location_code} className="sec-card">
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "0.5rem" }}>
+              <div>
+                <strong style={{ color: "var(--navy)" }}>{loc.location_name}</strong>
+                <div style={{ fontSize: "0.8rem", color: "var(--text-muted)" }}>
+                  {loc.location_code} &middot; {loc.zone_name ?? "—"}
+                </div>
+              </div>
+              <div>{loc.completion_pct}%</div>
+              <span className={`status-pill ${STATUS_PILL_CLASS[loc.status] ?? "not-started"}`}>{loc.status}</span>
+              <button onClick={() => toggleView(loc.location_code)} className="btn btn-secondary" style={{ fontSize: "0.8rem", padding: "0.3rem 0.7rem" }}>
+                👁 View
+              </button>
+            </div>
+            {expanded === loc.location_code && viewData && (
+              <div className="section-check-grid" style={{ marginTop: "0.75rem" }}>
+                {Object.entries(SECTION_NAMES_SHORT).map(([num, name]) => {
+                  const done = viewData.sectionsComplete[Number(num)];
+                  return (
+                    <div key={num} className={`section-check ${done ? "done" : "pending"}`}>
+                      {done ? "✅" : "⬜"} {name.replace(" - ", " ")}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
 
       <h3 style={{ color: "var(--navy-deep)" }}>Revision Requests</h3>
       <table className="themed-table">
