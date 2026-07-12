@@ -85,6 +85,10 @@ export interface FieldDefsResponse {
   fields: FieldDef[];
 }
 
+export interface AllFieldDefsResponse {
+  sections: Record<number, FieldDefsResponse>;
+}
+
 export type SubmissionStatus = "NOT_STARTED" | "IN_PROGRESS" | "PENDING_REVIEW" | "SUBMITTED" | "REJECTED";
 
 export interface SubmissionResponse {
@@ -232,7 +236,10 @@ export const api = {
     }
   },
   me: () => request<MeResponse>("/api/auth/me"),
-  fieldDefs: (sectionNo: number) => request<FieldDefsResponse>(`/api/field-defs/${sectionNo}`),
+  fieldDefs: (sectionNo: number, locationCode?: string) =>
+    request<FieldDefsResponse>(`/api/field-defs/${sectionNo}${locationCode ? `?locationCode=${locationCode}` : ""}`),
+  fieldDefsAll: (locationCode?: string) =>
+    request<AllFieldDefsResponse>(`/api/field-defs${locationCode ? `?locationCode=${locationCode}` : ""}`),
   getSubmission: (locationCode: string, monthYear: string) =>
     request<SubmissionResponse>(`/api/submissions/${locationCode}/${monthYear}`),
   getFyStatus: (locationCode: string, fyStartYear: number) =>

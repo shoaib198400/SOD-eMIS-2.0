@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { api } from "./api";
-import type { FieldDef } from "./api";
+import type { FieldDef, FieldDefsResponse, SubmissionResponse } from "./api";
 import { buildFieldHelp } from "./fieldHelp";
 import { computeDeadline } from "./deadline";
 
@@ -29,6 +29,8 @@ export function SectionForm({
   sectionNo,
   disabled,
   onSaved,
+  preloadedSubmission,
+  preloadedFieldDefs,
 }: {
   locationCode: string;
   locationName?: string | null;
@@ -36,6 +38,11 @@ export function SectionForm({
   sectionNo: number;
   disabled: boolean;
   onSaved?: () => void;
+  // Skips this component's own getSubmission/fieldDefs fetches when the caller already has
+  // the data — avoids firing 20 redundant requests when many SectionForms render at once
+  // (e.g. LocationReviewPanel showing all 10 sections read-only on one page).
+  preloadedSubmission?: SubmissionResponse;
+  preloadedFieldDefs?: FieldDefsResponse;
 }) {
   const [fields, setFields] = useState<FieldDef[] | null>(null);
   const [sectionName, setSectionName] = useState("");
@@ -48,7 +55,9 @@ export function SectionForm({
   useEffect(() => {
     setLoading(true);
     setError(null);
-    Promise.all([api.fieldDefs(sectionNo), api.getSubmission(locationCode, monthYear)])
+    const submissionPromise = preloadedSubmission ? Promise.resolve(preloadedSubmission) : api.getSubmission(locationCode, monthYear);
+    const fieldDefsPromise = preloadedFieldDefs ? Promise.resolve(preloadedFieldDefs) : api.fieldDefs(sectionNo, locationCode);
+    Promise.all([fieldDefsPromise, submissionPromise])
       .then(([defs, sub]) => {
         setFields(defs.fields);
         setSectionName(defs.sectionName);
@@ -57,7 +66,7 @@ export function SectionForm({
       })
       .catch((e) => setError((e as Error).message))
       .finally(() => setLoading(false));
-  }, [locationCode, monthYear, sectionNo]);
+  }, [locationCode, monthYear, sectionNo, preloadedSubmission, preloadedFieldDefs]);
 
   async function handleSave() {
     setSaving(true);

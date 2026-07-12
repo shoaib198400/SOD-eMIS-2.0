@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useState, Suspense, lazy } from "react";
 import { useAuth } from "./AuthContext";
 import { api } from "./api";
-import type { ZoneLocation, RevisionRequest, SubmissionResponse, MiStatusResponse } from "./api";
-import { SECTION_NAMES_SHORT } from "./sectionNames";
+import type { ZoneLocation, RevisionRequest, MiStatusResponse } from "./api";
 import { FyMonthPicker } from "./FyMonthPicker";
+import { LocationReviewPanel } from "./LocationReviewPanel";
 import titleBanner from "./assets/brand/title_banner.png";
 import sideLogo from "./assets/brand/side_logo.png";
 const AnalyticsPage = lazy(() => import("./AnalyticsPage").then((m) => ({ default: m.AnalyticsPage })));
@@ -83,9 +83,9 @@ export function ZoneDashboard() {
   const [error, setError] = useState<string | null>(null);
   const [revisionTarget, setRevisionTarget] = useState<string | null>(null);
   const [reason, setReason] = useState("");
-  const [expanded, setExpanded] = useState<{ code: string; type: "view" | "mis" } | null>(null);
-  const [viewData, setViewData] = useState<SubmissionResponse | null>(null);
+  const [expanded, setExpanded] = useState<{ code: string; type: "mis" } | null>(null);
   const [misData, setMisData] = useState<MiStatusResponse | null>(null);
+  const [reviewing, setReviewing] = useState<{ code: string; name: string } | null>(null);
 
   const refresh = useCallback(() => {
     api
@@ -112,16 +112,6 @@ export function ZoneDashboard() {
     } catch (e) {
       setError((e as Error).message);
     }
-  }
-
-  async function toggleView(code: string) {
-    if (expanded?.code === code && expanded.type === "view") {
-      setExpanded(null);
-      return;
-    }
-    const res = await api.getSubmission(code, monthYear);
-    setViewData(res);
-    setExpanded({ code, type: "view" });
   }
 
   async function toggleMis(code: string) {
@@ -192,6 +182,13 @@ export function ZoneDashboard() {
           <div className="dash-card">
             <ReportsPanel zoneMonthYear={monthYear} />
           </div>
+        ) : reviewing ? (
+          <LocationReviewPanel
+            locationCode={reviewing.code}
+            locationName={reviewing.name}
+            monthYear={monthYear}
+            onClose={() => setReviewing(null)}
+          />
         ) : (
           <>
 
@@ -232,7 +229,11 @@ export function ZoneDashboard() {
                     <div className="pct">{loc.completion_pct}%</div>
                     <span className={`status-pill ${STATUS_PILL_CLASS[loc.status] ?? "not-started"}`}>{loc.status}</span>
                     <div className="actions">
-                      <button onClick={() => toggleView(loc.location_code)} className="btn btn-secondary" style={{ fontSize: "0.8rem", padding: "0.3rem 0.7rem" }}>
+                      <button
+                        onClick={() => setReviewing({ code: loc.location_code, name: loc.location_name })}
+                        className="btn btn-secondary"
+                        style={{ fontSize: "0.8rem", padding: "0.3rem 0.7rem" }}
+                      >
                         👁 View
                       </button>
                       {loc.status === "SUBMITTED" && (
@@ -245,19 +246,6 @@ export function ZoneDashboard() {
                       </button>
                     </div>
                   </div>
-
-                  {expanded?.code === loc.location_code && expanded.type === "view" && viewData && (
-                    <div className="section-check-grid" style={{ marginTop: "0.75rem" }}>
-                      {Object.entries(SECTION_NAMES_SHORT).map(([num, name]) => {
-                        const done = viewData.sectionsComplete[Number(num)];
-                        return (
-                          <div key={num} className={`section-check ${done ? "done" : "pending"}`}>
-                            {done ? "✅" : "⬜"} {name}
-                          </div>
-                        );
-                      })}
-                    </div>
-                  )}
 
                   {expanded?.code === loc.location_code && expanded.type === "mis" && misData && (
                     <div className="section-check-grid" style={{ marginTop: "0.75rem" }}>

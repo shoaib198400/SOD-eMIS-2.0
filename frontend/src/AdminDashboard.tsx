@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useState, Suspense, lazy } from "react";
 import { useAuth } from "./AuthContext";
 import { api } from "./api";
-import type { ZoneLocation, RevisionRequest, AdminLocation, Zone, HelpdeskTicket, AuditLogEntry, SubmissionResponse } from "./api";
+import type { ZoneLocation, RevisionRequest, AdminLocation, Zone, HelpdeskTicket, AuditLogEntry } from "./api";
 import { FyMonthPicker } from "./FyMonthPicker";
-import { SECTION_NAMES_SHORT } from "./sectionNames";
+import { LocationReviewPanel } from "./LocationReviewPanel";
 import titleBanner from "./assets/brand/title_banner.png";
 import sideLogo from "./assets/brand/side_logo.png";
 const AnalyticsPage = lazy(() => import("./AnalyticsPage").then((m) => ({ default: m.AnalyticsPage })));
@@ -378,8 +378,7 @@ function OverviewTab({ monthYear }: { monthYear: string }) {
   const [zones, setZones] = useState<Zone[]>([]);
   const [zoneFilter, setZoneFilter] = useState<string>("");
   const [error, setError] = useState<string | null>(null);
-  const [expanded, setExpanded] = useState<string | null>(null);
-  const [viewData, setViewData] = useState<SubmissionResponse | null>(null);
+  const [reviewing, setReviewing] = useState<{ code: string; name: string } | null>(null);
 
   const refresh = useCallback(() => {
     api
@@ -403,14 +402,15 @@ function OverviewTab({ monthYear }: { monthYear: string }) {
     }
   }
 
-  async function toggleView(code: string) {
-    if (expanded === code) {
-      setExpanded(null);
-      return;
-    }
-    const res = await api.getSubmission(code, monthYear);
-    setViewData(res);
-    setExpanded(code);
+  if (reviewing) {
+    return (
+      <LocationReviewPanel
+        locationCode={reviewing.code}
+        locationName={reviewing.name}
+        monthYear={monthYear}
+        onClose={() => setReviewing(null)}
+      />
+    );
   }
 
   const stats = {
@@ -474,23 +474,15 @@ function OverviewTab({ monthYear }: { monthYear: string }) {
               <div className="pct">{loc.completion_pct}%</div>
               <span className={`status-pill ${STATUS_PILL_CLASS[loc.status] ?? "not-started"}`}>{loc.status}</span>
               <div className="actions">
-                <button onClick={() => toggleView(loc.location_code)} className="btn btn-secondary" style={{ fontSize: "0.8rem", padding: "0.3rem 0.7rem" }}>
+                <button
+                  onClick={() => setReviewing({ code: loc.location_code, name: loc.location_name })}
+                  className="btn btn-secondary"
+                  style={{ fontSize: "0.8rem", padding: "0.3rem 0.7rem" }}
+                >
                   👁 View
                 </button>
               </div>
             </div>
-            {expanded === loc.location_code && viewData && (
-              <div className="section-check-grid" style={{ marginTop: "0.75rem" }}>
-                {Object.entries(SECTION_NAMES_SHORT).map(([num, name]) => {
-                  const done = viewData.sectionsComplete[Number(num)];
-                  return (
-                    <div key={num} className={`section-check ${done ? "done" : "pending"}`}>
-                      {done ? "✅" : "⬜"} {name.replace(" - ", " ")}
-                    </div>
-                  );
-                })}
-              </div>
-            )}
           </div>
         ))}
       </div>
