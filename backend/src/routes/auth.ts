@@ -88,7 +88,12 @@ authRouter.post("/logout", requireAuth, async (req, res) => {
 
 authRouter.get("/me", requireAuth, async (req, res) => {
   const result = await pool.query(
-    "select id, login_code, role, location_code, zone_id, is_first_login from users where id = $1",
+    `select u.id, u.login_code, u.role, u.location_code, u.zone_id, u.is_first_login,
+            l.name as location_name, z.name as zone_name
+     from users u
+     left join locations l on l.code = u.location_code
+     left join zones z on z.id = u.zone_id
+     where u.id = $1`,
     [req.user!.sub]
   );
   const user = result.rows[0];
@@ -97,7 +102,9 @@ authRouter.get("/me", requireAuth, async (req, res) => {
     loginCode: user.login_code,
     role: user.role,
     locationCode: user.location_code,
+    locationName: user.location_name,
     zoneId: user.zone_id,
+    zoneName: user.zone_name,
     isFirstLogin: user.is_first_login,
   });
 });

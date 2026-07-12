@@ -4,6 +4,7 @@ import { LoginPage } from "./LoginPage";
 import { SectionForm } from "./SectionForm";
 import { SectionNav } from "./SectionNav";
 import type { NavSelection } from "./SectionNav";
+import { DashboardHome } from "./DashboardHome";
 import { WorkflowBar } from "./WorkflowBar";
 import { DetailTableEditor } from "./DetailTableEditor";
 import { MiPage } from "./MiPage";
@@ -23,7 +24,7 @@ function currentMonthKey(): string {
 function Dashboard() {
   const { user, logout } = useAuth();
   const [monthYear, setMonthYear] = useState(currentMonthKey());
-  const [selection, setSelection] = useState<NavSelection>(1);
+  const [selection, setSelection] = useState<NavSelection>("DASHBOARD");
   const [summary, setSummary] = useState<SubmissionResponse | null>(null);
   const [miAllComplete, setMiAllComplete] = useState(false);
   const [actionBusy, setActionBusy] = useState(false);
@@ -99,8 +100,8 @@ function Dashboard() {
       <main className="app-main">
         <header className="app-header">
           <div>
-            <div style={{ fontWeight: 600 }}>SOD eMIS</div>
-            <div style={{ fontSize: "0.8rem", opacity: 0.85 }}>{locationCode}</div>
+            <div style={{ fontWeight: 700, fontSize: "1.1rem" }}>HPCL SOD — MIS Entry Portal</div>
+            <div style={{ fontSize: "0.8rem", opacity: 0.85 }}>Supply, Operations &amp; Distribution</div>
           </div>
           <img src={titleBanner} className="title-banner" alt="" />
           <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
@@ -111,9 +112,11 @@ function Dashboard() {
               style={{ background: "white" }}
             />
             <HelpdeskWidget />
-            <span className="role-badge">{user!.role}</span>
-            <button className="btn btn-secondary" onClick={logout} style={{ padding: "0.4rem 0.8rem" }}>
-              Log out
+            <span className="location-pill">
+              📍 {user!.locationName ?? locationCode} | {user!.role}
+            </span>
+            <button className="btn-logout" onClick={logout}>
+              ↪ Logout
             </button>
           </div>
         </header>
@@ -135,30 +138,34 @@ function Dashboard() {
           </div>
         )}
 
-        <div className="dash-card">
-          {selection === "MI" ? (
-            <MiPage locationCode={locationCode} monthYear={monthYear} disabled={disabled} onAnySaved={refreshAll} />
-          ) : (
-            <>
-              <SectionForm
-                locationCode={locationCode}
-                monthYear={monthYear}
-                sectionNo={selection}
-                disabled={disabled}
-                onSaved={refreshAll}
-              />
-              {selection === 3 && (
-                <DetailTableEditor locationCode={locationCode} monthYear={monthYear} tableType="RAILWAY_CLAIM" disabled={disabled} />
-              )}
-              {selection === 10 && (
-                <>
-                  <DetailTableEditor locationCode={locationCode} monthYear={monthYear} tableType="IRR_DETAIL" disabled={disabled} />
-                  <DetailTableEditor locationCode={locationCode} monthYear={monthYear} tableType="LEGAL_CASE" disabled={disabled} />
-                </>
-              )}
-            </>
-          )}
-        </div>
+        {selection === "DASHBOARD" ? (
+          summary && <DashboardHome user={user!} monthYear={monthYear} summary={summary} miAllComplete={miAllComplete} onNavigate={setSelection} />
+        ) : (
+          <div className="dash-card">
+            {selection === "MI" ? (
+              <MiPage locationCode={locationCode} monthYear={monthYear} disabled={disabled} onAnySaved={refreshAll} />
+            ) : (
+              <>
+                <SectionForm
+                  locationCode={locationCode}
+                  monthYear={monthYear}
+                  sectionNo={selection}
+                  disabled={disabled}
+                  onSaved={refreshAll}
+                />
+                {selection === 3 && (
+                  <DetailTableEditor locationCode={locationCode} monthYear={monthYear} tableType="RAILWAY_CLAIM" disabled={disabled} />
+                )}
+                {selection === 10 && (
+                  <>
+                    <DetailTableEditor locationCode={locationCode} monthYear={monthYear} tableType="IRR_DETAIL" disabled={disabled} />
+                    <DetailTableEditor locationCode={locationCode} monthYear={monthYear} tableType="LEGAL_CASE" disabled={disabled} />
+                  </>
+                )}
+              </>
+            )}
+          </div>
+        )}
       </main>
     </div>
   );

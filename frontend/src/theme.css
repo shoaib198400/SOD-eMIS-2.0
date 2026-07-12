@@ -274,3 +274,160 @@ textarea:focus {
 .status-pill.pending-review { background: #dbeafe; color: #1e40af; }
 .status-pill.submitted { background: #dcfce7; color: #166534; }
 .status-pill.rejected { background: #fee2e2; color: #991b1b; }
+
+/* Dashboard landing page — ported from the "Revised login page.png" mockup */
+
+.location-pill {
+  background: rgba(255, 255, 255, 0.14);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 24px;
+  padding: 0.45rem 1rem;
+  color: white;
+  font-size: 0.9rem;
+  white-space: nowrap;
+}
+
+.btn-logout {
+  background: var(--red);
+  color: white;
+  border: none;
+  border-radius: 24px;
+  padding: 0.5rem 1.3rem;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(198, 40, 40, 0.28);
+}
+.btn-logout:hover {
+  background: var(--red-dark);
+}
+
+.overdue-banner {
+  background: var(--red);
+  color: white;
+  border-radius: var(--radius-lg);
+  padding: 0.75rem 1.1rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1.25rem;
+  box-shadow: 0 4px 14px rgba(198, 40, 40, 0.22);
+}
+.overdue-banner .badge {
+  background: rgba(255, 255, 255, 0.22);
+  border-radius: 20px;
+  padding: 0.25rem 0.8rem;
+  font-weight: 700;
+  font-size: 0.85rem;
+  white-space: nowrap;
+}
+
+.stat-row {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.85rem;
+  margin-bottom: 1.25rem;
+}
+.stat-card {
+  background: white;
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-card);
+  padding: 0.85rem 1rem;
+}
+.stat-card .label {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  color: var(--text-muted);
+  font-weight: 600;
+}
+.stat-card .value {
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: var(--navy-deep);
+  margin-top: 0.2rem;
+}
+
+.status-card {
+  background: white;
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-card);
+  overflow: hidden;
+}
+.status-card .status-card-header {
+  background: linear-gradient(135deg, var(--navy-deepest) 0%, var(--navy) 100%);
+  color: white;
+  padding: 0.9rem 1.2rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.status-card .status-card-body {
+  padding: 1rem 1.2rem;
+}
+
+.progress-track {
+  background: #e5e7eb;
+  border-radius: 6px;
+  height: 10px;
+  overflow: hidden;
+  margin: 0.4rem 0 1rem;
+}
+.progress-fill {
+  background: linear-gradient(90deg, #f59e0b, #f97316);
+  height: 100%;
+  border-radius: 6px;
+  transition: width 0.3s;
+}
+
+.section-check-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.6rem;
+}
+.section-check {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  border-radius: var(--radius-md);
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+  text-align: left;
+}
+.section-check.done {
+  background: #dcfce7;
+  color: #166534;
+}
+.section-check.pending {
+  background: #f3f4f6;
+  color: #4b5563;
+}
+
+.guideline-card {
+  background: white;
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-card);
+  overflow: hidden;
+}
+.guideline-card .guideline-header {
+  background: linear-gradient(135deg, var(--navy-deepest) 0%, var(--navy) 100%);
+  color: white;
+  padding: 0.75rem 1rem;
+  font-weight: 600;
+}
+.guideline-card .guideline-body {
+  padding: 1rem;
+  font-size: 0.85rem;
+  color: var(--text-body);
+}
+.deadline-callout {
+  background: #fef3c7;
+  border-left: 3px solid #f59e0b;
+  border-radius: var(--radius-md);
+  padding: 0.6rem 0.8rem;
+  font-size: 0.8rem;
+  color: #92400e;
+  margin: 0.75rem 0;
+}

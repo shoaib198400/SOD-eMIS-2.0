@@ -179,7 +179,9 @@ export interface MeResponse {
   loginCode: string;
   role: "Maker" | "Checker" | "Zone" | "Admin" | "Viewer";
   locationCode: string | null;
+  locationName: string | null;
   zoneId: number | null;
+  zoneName: string | null;
   isFirstLogin: boolean;
 }
 
