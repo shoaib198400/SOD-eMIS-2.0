@@ -284,4 +284,21 @@ export const api = {
       body: JSON.stringify({ issueType, issueDesc }),
     }),
   getMyHelpdeskTickets: () => request<{ tickets: HelpdeskTicket[] }>("/api/helpdesk/tickets"),
+  setupZoneAccounts: () => request<{ ok: boolean; added: string[] }>("/api/admin/setup-zone-accounts", { method: "POST" }),
+  syncMissingLocationAccounts: () =>
+    request<{ ok: boolean; added: string[] }>("/api/admin/sync-missing-location-accounts", { method: "POST" }),
+  getZoneAccounts: () =>
+    request<{ accounts: { id: number; login_code: string; role: string; zone_name: string | null; active: boolean; last_login_at: string | null }[] }>(
+      "/api/admin/zone-accounts"
+    ),
+  resetLocationData: (locationCodes: string[]) =>
+    request<{ ok: boolean; submissionsDeleted: number }>("/api/admin/reset-location-data", {
+      method: "POST",
+      body: JSON.stringify({ locationCodes }),
+    }),
+  uploadTankMaster: (rows: { locationCode: string; tankNo: string }[]) =>
+    request<{ ok: boolean; inserted: number }>("/api/admin/tank-master/upload", {
+      method: "POST",
+      body: JSON.stringify({ rows }),
+    }),
 };
